@@ -1,7 +1,7 @@
 'use strict';
 
 var ssh = require('../index');
-console.log(ssh);
+
 ssh.exec({
   command: ['uptime', 'ls -a'],
   sshConfig: {
@@ -9,5 +9,8 @@ ssh.exec({
     port: 22,
     username: 'username',
     password: 'password'
+  },
+  onEnd: function () {
+    console.log('Test End!');
   }
-})
+});

@@ -17,7 +17,7 @@ npm install --save-dev gulp-ssh
     var gulp = require('gulp');
     var ssh = require('gulp-ssh');
 
-    gulp.task('default', function () {
+    gulp.task('default', function (cb) {
       ssh.exec({
         command: ['uptime', 'ls -a'],
         sshConfig: {
@@ -25,7 +25,8 @@ npm install --save-dev gulp-ssh
           port: 22,
           username: 'username',
           password: 'password'
-        }
+        },
+        onEnd: cb
       })
     });
 
