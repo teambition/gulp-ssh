@@ -11,11 +11,4 @@ gulp.task('jshint', function(callback) {
 });
 
 // The default task (called when you run `gulp`)
-gulp.task('default', function() {
-  gulp.run('jshint');
-
-  // Watch files and run tasks if they change
-  // gulp.watch('lib/*.js', function(event) {
-  //   gulp.run('jshint');
-  // });
-});
+gulp.task('default', ['jshint']);

@@ -14,32 +14,44 @@ npm install --save-dev gulp-ssh
 
 ## Example
 
-    var gulp = require('gulp');
-    var ssh = require('gulp-ssh');
+```js
+var gulp = require('gulp');
+var gulpSSH = require('gulp-ssh')({
+  ignoreErrors: false,
+  sshConfig: {
+    host: 'angularjs.cn',
+    port: 22,
+    username: 'root',
+    privateKey: require('fs').readFileSync('/Users/zensh/.ssh/id_rsa')
+  }
+});
 
-    gulp.task('default', function (cb) {
-      ssh.exec({
-        command: ['uptime', 'ls -a'],
-        sshConfig: {
-          host: 'angularjs.cn',
-          port: 22,
-          username: 'username',
-          password: 'password'
-        },
-        onEnd: cb
-      })
-    });
+gulp.task('exec', function () {
+  return gulpSSH.exec(['uptime', 'ls -a', 'pwd']);
+});
+
+gulp.task('sftp-read', function () {
+  return gulpSSH.sftp('read', 'pm2.json')
+    .pipe(gulp.dest('test.json'));
+});
+
+gulp.task('sftp-write', function () {
+  return gulp.src('index.js')
+    .pipe(gulpSSH.sftp('write', 'test.js'));
+});
+```
 
 ## API
 
-### ssh.exec(options)
+```js
+var GulpSSH = require('gulp-ssh');
+```
 
-#### options.command
+### GulpSSH(options)
 
-*Required*
-Type: `String` or `Array`
-
-a command string or commands array to exec.
+```js
+var gulpSSH = new GulpSSH(options);
+```
 
 #### options.sshConfig
 
@@ -67,9 +79,18 @@ Ignore errors when executing commands.
 
 *****
 
-### ssh.sftp(options)
+### gulpSSH.connect(options)
 
-TODO
+return `this`
+
+### gulpSSH.exec(commands, options)
+
+return `stream`
+
+### gulpSSH.sftp(command, filePath, options)
+
+return `stream`
+
 
 ## License
 
