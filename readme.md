@@ -26,15 +26,18 @@ var gulpSSH = require('gulp-ssh')({
   }
 });
 
+// execute commands
 gulp.task('exec', function () {
   return gulpSSH.exec(['uptime', 'ls -a', 'pwd']);
 });
 
+// get file from server and write to local
 gulp.task('sftp-read', function () {
   return gulpSSH.sftp('read', 'pm2.json')
-    .pipe(gulp.dest('test.json'));
+    .pipe(gulp.dest(''));
 });
 
+// put local file to server
 gulp.task('sftp-write', function () {
   return gulp.src('index.js')
     .pipe(gulpSSH.sftp('write', 'test.js'));

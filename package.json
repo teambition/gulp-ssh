@@ -11,9 +11,6 @@
   "engines": {
     "node": ">=0.8.0"
   },
-  "scripts": {
-    "test": "mocha"
-  },
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -30,13 +27,6 @@
     "client",
     "upload"
   ],
-  "tags": [
-    "gulpplugin",
-    "ssh",
-    "ssh2",
-    "sftp",
-    "exec"
-  ],
   "dependencies": {
     "gulp-util": ">=3.0.0",
     "through2": "~1.1.1",
@@ -45,7 +35,15 @@
   "devDependencies": {
     "gulp": ">=3.8.8",
     "gulp-jshint": ">=1.8.5",
-    "mocha": "*",
-    "should": "*"
-  }
+    "gulp-sequence": ">=0.1.0"
+  },
+  "scripts": {
+    "test": "gulp test"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "test",
+    "gulpfile.js"
+  ]
 }

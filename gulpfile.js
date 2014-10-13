@@ -2,6 +2,8 @@
 
 var gulp = require('gulp');
 var jshint = require('gulp-jshint');
+var test = require('./test/index');
+var gulpSequence = require('gulp-sequence');
 
 gulp.task('jshint', function(callback) {
   var s = gulp.src(['lib/*.js', '*.js'])
@@ -10,5 +12,6 @@ gulp.task('jshint', function(callback) {
   return callback(null);
 });
 
-// The default task (called when you run `gulp`)
-gulp.task('default', ['jshint']);
+test();
+
+gulp.task('default', gulpSequence('jshint', 'test'));
