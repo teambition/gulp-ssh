@@ -1,6 +1,6 @@
 {
   "name": "gulp-ssh",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "SSH and SFTP tasks for gulp",
   "license": "MIT",
   "author": {

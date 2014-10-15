@@ -48,7 +48,7 @@ function GulpSSH(options) {
       ctx._connected = false;
     });
 
-  gulp.on('stop', function () {
+  gulp.once('stop', function () {
     ctx.ssh2.end();
   });
 }
@@ -78,7 +78,7 @@ GulpSSH.prototype.ready = function (fn) {
 };
 
 GulpSSH.prototype.exec = function (commands, options) {
-  var ctx = this, outStream = through.obj(), ssh = this.ssh2, finish = false;
+  var ctx = this, outStream = through.obj(), ssh = this.ssh2;
 
   if (!commands) throw new gutil.PluginError(packageName, '`commands` required.');
 
@@ -91,12 +91,11 @@ GulpSSH.prototype.exec = function (commands, options) {
     contents: through.obj()
   });
 
-  outStream.write(file);
+  outStream.push(file);
   this.connect().ready(execCommand);
 
   function endStream() {
-    if (finish) return;
-    finish = true;
+    file.contents.end();
     outStream.end();
   }
 
@@ -131,7 +130,7 @@ GulpSSH.prototype.exec = function (commands, options) {
 };
 
 GulpSSH.prototype.sftp = function (command, filePath, options) {
-  var ctx = this, ssh = this.ssh2, finish = false, outStream;
+  var ctx = this, ssh = this.ssh2, outStream;
 
   if (!command) throw new gutil.PluginError(packageName, '`command` required.');
   if (!filePath) throw new gutil.PluginError(packageName, '`filePath` required.');
@@ -139,8 +138,6 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
   this.connect();
 
   function endStream() {
-    if (finish) return;
-    finish = true;
     outStream.end();
   }
 

@@ -3,6 +3,7 @@
 var gulp = require('gulp');
 var GulpSSH = require('../index');
 var gulpSequence = require('gulp-sequence');
+var through = require('through2');
 
 module.exports = function () {
 
@@ -32,8 +33,8 @@ module.exports = function () {
 
   gulp.task('exec', function () {
     return gulpSSH
-      .exec(['uptime', 'ls -a', 'pwd'], {filePath: 'commands.log'});
-      // .pipe(gulp.dest('logs')); // this not end task...
+      .exec(['uptime', 'ls -a', 'pwd'], {filePath: 'commands.log'})
+      .pipe(gulp.dest('logs'));
   });
 
   gulp.task('sftp-read', function () {
