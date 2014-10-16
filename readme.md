@@ -28,7 +28,9 @@ var gulpSSH = require('gulp-ssh')({
 
 // execute commands
 gulp.task('exec', function () {
-  return gulpSSH.exec(['uptime', 'ls -a', 'pwd']);
+  return gulpSSH
+    .exec(['uptime', 'ls -a', 'pwd'], {filePath: 'commands.log'})
+    .pipe(gulp.dest('logs'));
 });
 
 // get file from server and write to local
