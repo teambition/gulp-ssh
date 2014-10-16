@@ -1,4 +1,4 @@
-# gulp-ssh
+# gulp-ssh v0.2.2
 
 > SSH and SFTP tasks for gulp
 
@@ -78,24 +78,53 @@ More [SSH Connection methods](https://github.com/mscdex/ssh2#connection-methods)
 #### options.ignoreErrors
 
 Type: `Boolean`
-Default: `true`
 
-Ignore errors when executing commands.
+Ignore errors when executing commands.. **Default:** (false)
 
 *****
 
-### gulpSSH.connect(options)
+### gulpSSH.connect(sshConfig)
 
-return `this`
+return `gulpSSH`
 
 ### gulpSSH.exec(commands, options)
 
 return `stream`
 
+#### commands
+
+*Required*
+Type: `String` or `Array`
+
+#### options.filePath
+
+*Option*
+Type: `String`
+
+file path to write on local. **Default:** ('commands.log')
+
+
 ### gulpSSH.sftp(command, filePath, options)
 
 return `stream`
 
+#### command
+
+*Required*
+Type: `String`
+Value: 'read' or 'write'
+
+#### filePath
+
+*Required*
+Type: `String`
+
+file path to read or write on server. **Default:** (none)
+
+#### options
+
+*Option*
+Type: `Object`
 
 ## License
 

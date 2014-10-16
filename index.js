@@ -169,13 +169,13 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
         outStream.write(file);
       });
     });
-  }
+  } else throw new gutil.PluginError(packageName, 'Command "' + command + '" not support.');
 
   return outStream;
 
 };
 
-// 兼容 老版本
+// compatible with 0.1.x
 GulpSSH.exec = function (options) {
   if (typeof options.sshConfig !== 'object') {
     throw new gutil.PluginError(packageName, '`sshConfig` required.');
