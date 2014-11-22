@@ -1,4 +1,4 @@
-# gulp-ssh v0.3.0
+# gulp-ssh v0.3.1
 
 > SSH and SFTP tasks for gulp
 
@@ -86,7 +86,7 @@ More [SSH Connection methods](https://github.com/mscdex/ssh2#connection-methods)
 
 Type: `Boolean`
 
-Ignore errors when executing commands.. **Default:** (false)
+Ignore errors when executing commands. **Default:** (false)
 
 *****
 
@@ -109,6 +109,13 @@ Type: `String` or `Array`
 Type: `String`
 
 file path to write on local. **Default:** ('gulp-ssh.shell.log')
+
+#### options.autoExit
+
+*Option*
+Type: `Boolean`
+
+auto exit shell. **Default:** (true)
 
 ### gulpSSH.exec(commands, options)
 

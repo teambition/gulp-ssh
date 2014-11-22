@@ -81,6 +81,7 @@ GulpSSH.prototype.exec = function (commands, options) {
 
   if (!commands) throw new gutil.PluginError(packageName, '`commands` required.');
 
+  options = options || {};
   commands = Array.isArray(commands) ? commands.slice() : [commands];
 
   var file = new gutil.File({
@@ -178,6 +179,7 @@ GulpSSH.prototype.shell = function (commands, options) {
 
   if (!commands) throw new gutil.PluginError(packageName, '`commands` required.');
 
+  options = options || {};
   commands = Array.isArray(commands) ? commands.slice() : [commands];
 
   var file = new gutil.File({
@@ -188,14 +190,13 @@ GulpSSH.prototype.shell = function (commands, options) {
   });
 
   outStream.push(file);
-  this.connect().ready(shellCommand);
 
   function endStream() {
     file.contents.end();
     outStream.end();
   }
 
-  function shellCommand() {
+  this.connect().ready(function () {
     if (commands.length === 0) return endStream();
     ssh.shell(function (err, stream) {
       if (err) return outStream.emit('error', new gutil.PluginError(packageName, err));
@@ -208,29 +209,16 @@ GulpSSH.prototype.shell = function (commands, options) {
         });
 
       stream.pipe(file.contents, {end: true});
-      commands = (commands.join('\n') + '\n').replace(/\n+/g, '\n').toLowerCase();
-      if (commands.slice(-6) !== '\nexit\n') commands += 'exit\n';
-      stream.end(commands);
+      var lastCommand;
+      commands.forEach(function (command) {
+        if (command[command.length - 1] !== '\n') command += '\n';
+        gutil.log(packageName + ' :: shell :: ' + command);
+        stream.write(command);
+        lastCommand = command;
+      });
+      if (options.autoExit !== false) stream.end(lastCommand === 'exit\n' ? null : 'exit\n');
     });
-  }
+  });
 
   return outStream;
-};
-
-// compatible with 0.1.x
-GulpSSH.exec = function (options) {
-  if (typeof options.sshConfig !== 'object') {
-    throw new gutil.PluginError(packageName, '`sshConfig` required.');
-  }
-  if (!options.command) {
-    throw new gutil.PluginError(packageName, '`command` required.');
-  }
-
-  gutil.log('This method will be deprecated!');
-
-  var execOptions = options.execOptions || {};
-  var callback = options.onEnd || function () {};
-  var gulpSSH = new GulpSSH({sshConfig: options.sshConfig});
-
-  gulpSSH.exec(options.command, execOptions).on('end', callback);
 };

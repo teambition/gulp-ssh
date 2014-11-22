@@ -7,20 +7,6 @@ var through = require('through2');
 
 module.exports = function () {
 
-  // Old version test
-  // GulpSSH.exec({
-  //   command: ['uptime', 'ls -a'],
-  //   sshConfig: {
-  //     host: 'angularjs.cn',
-  //     port: 22,
-  //     username: 'root',
-  //     privateKey: require('fs').readFileSync('/Users/zensh/.ssh/id_rsa')
-  //   },
-  //   onEnd: function () {
-  //     console.log('Test End!');
-  //   }
-  // });
-
   var gulpSSH = new GulpSSH({
     ignoreErrors: false,
     sshConfig: {
