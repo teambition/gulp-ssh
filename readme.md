@@ -1,4 +1,4 @@
-# gulp-ssh v0.2.2
+# gulp-ssh v0.3.0
 
 > SSH and SFTP tasks for gulp
 
@@ -44,6 +44,13 @@ gulp.task('sftp-write', function () {
   return gulp.src('index.js')
     .pipe(gulpSSH.sftp('write', 'test.js'));
 });
+
+// execute commands in shell
+gulp.task('shell', function () {
+  return gulpSSH
+    .shell(['cd /home/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
+    .pipe(gulp.dest('logs'));
+});
 ```
 
 ## API
@@ -87,6 +94,22 @@ Ignore errors when executing commands.. **Default:** (false)
 
 return `gulpSSH`
 
+### gulpSSH.shell(commands, options)
+
+return `stream`
+
+#### commands
+
+*Required*
+Type: `String` or `Array`
+
+#### options.filePath
+
+*Option*
+Type: `String`
+
+file path to write on local. **Default:** ('gulp-ssh.shell.log')
+
 ### gulpSSH.exec(commands, options)
 
 return `stream`
@@ -101,7 +124,7 @@ Type: `String` or `Array`
 *Option*
 Type: `String`
 
-file path to write on local. **Default:** ('commands.log')
+file path to write on local. **Default:** ('gulp-ssh.exec.log')
 
 
 ### gulpSSH.sftp(command, filePath, options)

@@ -63,9 +63,8 @@ function flushReady(ctx) {
 }
 
 GulpSSH.prototype.connect = function (options) {
-  var ctx = this;
   if (options) this.options.sshConfig = options;
-  if (!this._connect && !ctx._connected) {
+  if (!this._connect && !this._connected) {
     this._connect = true;
     this.ssh2.connect(this.options.sshConfig);
   }
@@ -82,12 +81,12 @@ GulpSSH.prototype.exec = function (commands, options) {
 
   if (!commands) throw new gutil.PluginError(packageName, '`commands` required.');
 
-  commands = Array.isArray(commands) ? commands : [commands];
+  commands = Array.isArray(commands) ? commands.slice() : [commands];
 
   var file = new gutil.File({
     cwd: __dirname,
     base: __dirname,
-    path: path.join(__dirname, options.filePath || 'commands.log'),
+    path: path.join(__dirname, options.filePath || 'gulp-ssh.exec.log'),
     contents: through.obj()
   });
 
@@ -126,7 +125,6 @@ GulpSSH.prototype.exec = function (commands, options) {
   }
 
   return outStream;
-
 };
 
 GulpSSH.prototype.sftp = function (command, filePath, options) {
@@ -173,6 +171,50 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
 
   return outStream;
 
+};
+
+GulpSSH.prototype.shell = function (commands, options) {
+  var ctx = this, outStream = through.obj(), ssh = this.ssh2;
+
+  if (!commands) throw new gutil.PluginError(packageName, '`commands` required.');
+
+  commands = Array.isArray(commands) ? commands.slice() : [commands];
+
+  var file = new gutil.File({
+    cwd: __dirname,
+    base: __dirname,
+    path: path.join(__dirname, options.filePath || 'gulp-ssh.shell.log'),
+    contents: through.obj()
+  });
+
+  outStream.push(file);
+  this.connect().ready(shellCommand);
+
+  function endStream() {
+    file.contents.end();
+    outStream.end();
+  }
+
+  function shellCommand() {
+    if (commands.length === 0) return endStream();
+    ssh.shell(function (err, stream) {
+      if (err) return outStream.emit('error', new gutil.PluginError(packageName, err));
+
+      stream
+        .on('end', endStream)
+        .on('close', endStream)
+        .stderr.on('data', function (data) {
+          outStream.emit('error', new gutil.PluginError(packageName, data + ''));
+        });
+
+      stream.pipe(file.contents, {end: true});
+      commands = (commands.join('\n') + '\n').replace(/\n+/g, '\n').toLowerCase();
+      if (commands.slice(-6) !== '\nexit\n') commands += 'exit\n';
+      stream.end(commands);
+    });
+  }
+
+  return outStream;
 };
 
 // compatible with 0.1.x

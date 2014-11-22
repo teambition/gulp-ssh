@@ -47,6 +47,12 @@ module.exports = function () {
       .pipe(gulpSSH.sftp('write', 'test.js'));
   });
 
-  gulp.task('test', gulpSequence('exec', 'sftp-read', 'sftp-write'));
+  gulp.task('shell', function () {
+    return gulpSSH
+      .shell(['cd /home/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
+      .pipe(gulp.dest('logs'));
+  });
+
+  gulp.task('test', gulpSequence('exec', 'sftp-read', 'sftp-write', 'shell'));
 
 };
