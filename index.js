@@ -147,9 +147,12 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
           if (err) return outStream.emit('error', new gutil.PluginError(packageName, err));
           var write = sftp.createWriteStream(filePath, options);
 
-          write.on('finish', endStream);
+          write.on('finish', function () {
+            callback(null, file);
+            endStream();
+          });
+
           file.pipe(write);
-          callback(null, file);
         });
       });
     });
