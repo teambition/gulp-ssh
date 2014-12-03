@@ -1,4 +1,4 @@
-# gulp-ssh v0.3.1
+# gulp-ssh v0.3.2
 
 > SSH and SFTP tasks for gulp
 
