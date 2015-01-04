@@ -49,9 +49,7 @@ function GulpSSH(options) {
     });
 
   gulp.once('stop', function () {
-    if ( ctx._connected ) {
-      ctx.ssh2.end();
-    }
+    if (ctx._connected) ctx.ssh2.end();
   });
 }
 
