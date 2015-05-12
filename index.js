@@ -152,6 +152,10 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
             endStream();
           });
 
+          write.on('progress', function(done, left){
+            outStream.emit('progress', done, left);
+          });
+
           file.pipe(write);
         });
       });
