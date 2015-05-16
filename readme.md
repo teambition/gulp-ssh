@@ -19,7 +19,7 @@ var gulp = require('gulp');
 var gulpSSH = require('gulp-ssh')({
   ignoreErrors: false,
   sshConfig: {
-    host: 'angularjs.cn',
+    host: '192.168.0.22',
     port: 22,
     username: 'root',
     privateKey: require('fs').readFileSync('/Users/zensh/.ssh/id_rsa')
@@ -155,6 +155,10 @@ file path to read or write on server. **Default:** (none)
 
 *Option*
 Type: `Object`
+
+### gulpSSH.close()
+
+Close the ssh connection.
 
 ## License
 

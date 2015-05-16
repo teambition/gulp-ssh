@@ -8,9 +8,12 @@
  */
 
 var path = require('path');
+var util = require('util');
+var EventEmitter = require('events').EventEmitter;
+
 var gulp = require('gulp');
 var gutil = require('gulp-util');
-var ssh2 = require('ssh2');
+var Client = require('ssh2').Client;
 var through = require('through2');
 var packageName = require('./package.json').name;
 
@@ -21,154 +24,200 @@ function GulpSSH(options) {
   var ctx = this;
 
   this.options = options || {};
-  this._connect = false;
+  this._connecting = false;
   this._connected = false;
+  this._ended = false;
   this._readyEvents = [];
 
-  this.ssh2 = new ssh2();
+  this.ssh2 = new Client();
   this.ssh2
-    .on('connect', function () {
+    .on('connect', function() {
       gutil.log(packageName + ' :: Connect...');
+      ctx.emit('connect');
     })
-    .on('ready', function () {
+    .on('ready', function() {
       gutil.log(packageName + ' :: Ready');
-      ctx._connect = false;
+      ctx._connecting = false;
       ctx._connected = true;
       flushReady(ctx);
+      ctx.emit('ready');
     })
-    .on('error', function (err) {
+    .on('error', function(err) {
       gutil.colors.red(new gutil.PluginError(packageName, err));
+      ctx.emit('error', err);
     })
-    .on('end', function () {
+    .on('end', function() {
       gutil.log(packageName + ' :: End');
-    })
-    .on('close', function () {
-      gutil.log(packageName + ' :: Close');
-      ctx._connect = false;
+      ctx._connecting = false;
       ctx._connected = false;
+      ctx.emit('end');
+    })
+    .on('close', function(hadError) {
+      gutil.log(packageName + ' :: Close');
+      ctx._connecting = false;
+      ctx._connected = false;
+      ctx.emit('close', hadError);
     });
 
-  gulp.once('stop', function () {
-    if (ctx._connected) ctx.ssh2.end();
+  EventEmitter.call(this);
+  gulp.once('stop', function() {
+    ctx.close();
   });
 }
 
+util.inherits(GulpSSH, EventEmitter);
+
 function flushReady(ctx) {
   if (!ctx._connected) return;
-  var listener = ctx._readyEvents.shift();
-  while (listener) {
-    listener.call(ctx);
-    listener = ctx._readyEvents.shift();
-  }
+  while (ctx._readyEvents.length) ctx._readyEvents.shift().call(ctx);
 }
 
-GulpSSH.prototype.connect = function (options) {
+GulpSSH.prototype.connect = function(options) {
   if (options) this.options.sshConfig = options;
-  if (!this._connect && !this._connected) {
-    this._connect = true;
+  if (!this._connecting && !this._connected) {
+    this._connecting = true;
     this.ssh2.connect(this.options.sshConfig);
   }
   return this;
 };
 
-GulpSSH.prototype.ready = function (fn) {
+GulpSSH.prototype.ready = function(fn) {
   this._readyEvents.push(fn);
   flushReady(this);
 };
 
-GulpSSH.prototype.exec = function (commands, options) {
-  var ctx = this, outStream = through.obj(), ssh = this.ssh2;
+GulpSSH.prototype.close = function() {
+  if (this.ended) return;
+  this._connecting = false;
+  this._connected = false;
+  this._ended = true;
+  this._readyEvents.length = 0;
+  this.ssh2.end();
+};
+
+GulpSSH.prototype.exec = function(commands, options) {
+  var ctx = this;
+  var ssh = this.ssh2;
+  var chunkSize = 0;
+  var chunks = [];
+  var outStream = through.obj();
 
   if (!commands) throw new gutil.PluginError(packageName, '`commands` required.');
 
   options = options || {};
   commands = Array.isArray(commands) ? commands.slice() : [commands];
 
-  var file = new gutil.File({
-    cwd: __dirname,
-    base: __dirname,
-    path: path.join(__dirname, options.filePath || 'gulp-ssh.exec.log'),
-    contents: through.obj()
-  });
-
-  outStream.push(file);
   this.connect().ready(execCommand);
 
   function endStream() {
-    file.contents.end();
+    outStream.push(new gutil.File({
+      cwd: __dirname,
+      base: __dirname,
+      path: path.join(__dirname, options.filePath || 'gulp-ssh.exec.log'),
+      contents: Buffer.concat(chunks, chunkSize)
+    }));
     outStream.end();
   }
 
   function execCommand() {
-    if (commands.length === 0) return endStream();
+    if (!commands.length) return endStream();
     var command = commands.shift();
     if (typeof command !== 'string') return execCommand();
 
     gutil.log(packageName + ' :: Executing :: ' + command);
-
-    ssh.exec(command, options, function (err, stream) {
+    ssh.exec(command, options, function(err, stream) {
       if (err) return outStream.emit('error', new gutil.PluginError(packageName, err));
-
       stream
-        .on('exit', function (code, signalName, didCoreDump, description) {
+        .on('data', function(chunk) {
+          chunkSize += chunk.length;
+          chunks.push(chunk);
+        })
+        .on('exit', function(code, signalName, didCoreDump, description) {
           if (ctx.ignoreErrors === false && code == null) {
             var message = signalName + ', ' + didCoreDump + ', ' + description;
             outStream.emit('error', new gutil.PluginError(packageName, message));
           }
         })
-        .on('end', execCommand)
-        .stderr.on('data', function (data) {
+        .on('close', execCommand)
+        .stderr.on('data', function(data) {
           outStream.emit('error', new gutil.PluginError(packageName, data + ''));
         });
-
-      stream.pipe(file.contents, {end: false});
     });
   }
 
   return outStream;
 };
 
-GulpSSH.prototype.sftp = function (command, filePath, options) {
-  var ctx = this, ssh = this.ssh2, outStream;
+GulpSSH.prototype.sftp = function(command, filePath, options) {
+  var ctx = this;
+  var ssh = this.ssh2;
+  var outStream;
 
   if (!command) throw new gutil.PluginError(packageName, '`command` required.');
   if (!filePath) throw new gutil.PluginError(packageName, '`filePath` required.');
 
   this.connect();
 
-  function endStream() {
-    outStream.end();
-  }
-
   if (command === 'write') {
-    outStream = through.obj(function (file, encoding, callback) {
-      ctx.ready(function () {
+    outStream = through.obj(function(file, encoding, callback) {
+      ctx.ready(function() {
         ssh.sftp(function(err, sftp) {
-          if (err) return outStream.emit('error', new gutil.PluginError(packageName, err));
+          if (err) return callback(new gutil.PluginError(packageName, err));
+          options = options || {};
+          options.autoClose = true;
           var write = sftp.createWriteStream(filePath, options);
 
-          write.on('finish', function () {
-            callback(null, file);
-            endStream();
-          });
+          write
+            .on('error', function(error) {
+              err = error;
+            })
+            .on('finish', function() {
+              sftp.end();
+              if (err) callback(err);
+              else callback(null, file);
+            });
 
-          file.pipe(write);
+          if (file.isStream()) file.pipe(write);
+          else if (file.isBuffer()) write.end(file.contents);
+          else {
+            err = new gutil.PluginError(packageName, 'file error!');
+            write.end();
+          }
         });
       });
     });
+
   } else if (command === 'read') {
-    var file = new gutil.File({
-      cwd: __dirname,
-      base: __dirname,
-      path: path.join(__dirname, filePath)
-    });
+    var chunkSize = 0;
+    var chunks = [];
+
     outStream = through.obj();
-    ctx.ready(function () {
+    ctx.ready(function() {
       ssh.sftp(function(err, sftp) {
         if (err) return outStream.emit('error', new gutil.PluginError(packageName, err));
-        file.contents = sftp.createReadStream(filePath, options);
-        file.contents.on('close', endStream);
-        outStream.write(file);
+        var read = sftp.createReadStream(filePath, options);
+
+        read
+          .on('data', function(chunk) {
+            chunkSize += chunk.length;
+            chunks.push(chunk);
+          })
+          .on('error', function(err) {
+            outStream.emit('error', err);
+          })
+          .on('end', function() {
+            outStream.push(new gutil.File({
+              cwd: __dirname,
+              base: __dirname,
+              path: path.join(__dirname, filePath),
+              contents: Buffer.concat(chunks, chunkSize)
+            }));
+            outStream.end();
+            this.close();
+          })
+          .on('close', function() {
+            sftp.end();
+          });
       });
     });
   } else throw new gutil.PluginError(packageName, 'Command "' + command + '" not support.');
@@ -177,43 +226,45 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
 
 };
 
-GulpSSH.prototype.shell = function (commands, options) {
-  var ctx = this, outStream = through.obj(), ssh = this.ssh2;
+GulpSSH.prototype.shell = function(commands, options) {
+  var ctx = this;
+  var ssh = this.ssh2;
+  var chunkSize = 0;
+  var chunks = [];
+  var outStream = through.obj();
 
   if (!commands) throw new gutil.PluginError(packageName, '`commands` required.');
 
   options = options || {};
   commands = Array.isArray(commands) ? commands.slice() : [commands];
 
-  var file = new gutil.File({
-    cwd: __dirname,
-    base: __dirname,
-    path: path.join(__dirname, options.filePath || 'gulp-ssh.shell.log'),
-    contents: through.obj()
-  });
-
-  outStream.push(file);
-
   function endStream() {
-    file.contents.end();
+    outStream.push(new gutil.File({
+      cwd: __dirname,
+      base: __dirname,
+      path: path.join(__dirname, options.filePath || 'gulp-ssh.exec.log'),
+      contents: Buffer.concat(chunks, chunkSize)
+    }));
     outStream.end();
   }
 
-  this.connect().ready(function () {
+  this.connect().ready(function() {
     if (commands.length === 0) return endStream();
-    ssh.shell(function (err, stream) {
+    ssh.shell(function(err, stream) {
       if (err) return outStream.emit('error', new gutil.PluginError(packageName, err));
 
       stream
-        .on('end', endStream)
+        .on('data', function(chunk) {
+          chunkSize += chunk.length;
+          chunks.push(chunk);
+        })
         .on('close', endStream)
-        .stderr.on('data', function (data) {
+        .stderr.on('data', function(data) {
           outStream.emit('error', new gutil.PluginError(packageName, data + ''));
         });
 
-      stream.pipe(file.contents, {end: true});
       var lastCommand;
-      commands.forEach(function (command) {
+      commands.forEach(function(command) {
         if (command[command.length - 1] !== '\n') command += '\n';
         gutil.log(packageName + ' :: shell :: ' + command);
         stream.write(command);
