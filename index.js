@@ -8,6 +8,7 @@
  */
 
 var path = require('path');
+var fs = require('fs');
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
@@ -225,6 +226,106 @@ GulpSSH.prototype.sftp = function(command, filePath, options) {
   return outStream;
 
 };
+
+GulpSSH.prototype.dest = function(destDir, options) {
+    if (!destDir) throw new gutil.PluginError(packageName, '`destDir` required.');
+
+    var ctx = this;
+    var ssh = this.ssh2;
+    var outStream;
+
+    this.connect();
+
+    return through.obj(function(file, encoding, callback) {
+
+        fs.stat(file.path, function(err, stats) {
+
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            if (stats.isDirectory()) {
+                gutil.log(file.path + ' is a directory. Skipping.');
+                // don't bother connecting if it's a directory
+                callback(null, file);
+                return;
+            }
+
+            var outPath = path.join(destDir, file.path.replace(file.base, ''));
+            gutil.log('Preparing to write ' + outPath);
+
+          ctx.ready(function() {
+            ssh.sftp(function(err, sftp) {
+              if (err) return callback(new gutil.PluginError(packageName, err));
+              options = options || {};
+              options.autoClose = true;
+
+              var doWrite = function() {
+                  gutil.log('Writing ' + outPath);
+                  var write = sftp.createWriteStream(outPath, options);
+
+                  write
+                    .on('error', function(error) {
+                      err = error;
+                    })
+                    .on('finish', function() {
+                      gutil.log('Finished writing ' + outPath);
+                      sftp.end();
+                      if (err) callback(err);
+                      else callback(null, file);
+                    });
+
+                  if (file.isStream()) file.pipe(write);
+                  else if (file.isBuffer()) write.end(file.contents);
+                  else {
+                    err = new gutil.PluginError(packageName, 'file error!');
+                    write.end();
+                  }
+              };
+
+              var mkdirsIfNotExists = function internalMkDirs(sftp, filePath, callback) {
+                var outPathDir = path.dirname(filePath);
+                sftp.exists(outPathDir, function(result) {
+                  if (result) {
+                    callback();
+                    return;
+                  }
+
+                  // recursively make directories as required
+                  internalMkDirs(sftp, outPathDir, function(err) {
+                    if (err) {
+                      callback(new gutil.PluginError(packageName, err));
+                      return;
+                    }
+
+                    sftp.mkdir(outPathDir, function(err) {
+                      gutil.log('Creating directory ' + outPathDir);
+
+                      if (err) {
+                        gutil.log('Error creating directory ' + outPathDir);
+                        callback(new gutil.PluginError(packageName, err));
+                        return;
+                      }
+
+                      callback();
+                    });
+                  });
+                });
+              };
+
+              var outPathDir = path.dirname(outPath);
+              mkdirsIfNotExists(sftp, outPath, function(error) {
+                if (error)
+                  callback(error);
+                else
+                  doWrite();
+              });
+          });
+        });
+      });
+    });
+}
 
 GulpSSH.prototype.shell = function(commands, options) {
   var ctx = this;
