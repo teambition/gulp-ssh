@@ -33,7 +33,7 @@ module.exports = function() {
       .shell(['cd /home/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
       .pipe(gulp.dest('logs'));
   });
-
+  
   gulp.task('test', gulpSequence('exec', 'sftp-read', 'sftp-write', 'shell'));
 
 };
