@@ -9,12 +9,7 @@ module.exports = function() {
 
   var gulpSSH = new GulpSSH({
     ignoreErrors: false,
-    sshConfig: {
-      host: '192.168.0.22',
-      port: 22,
-      username: 'root',
-      privateKey: require('fs').readFileSync('/Users/zensh/.ssh/id_rsa')
-    }
+    sshConfig: require('./test-settings')
   });
 
   gulp.task('exec', function() {
