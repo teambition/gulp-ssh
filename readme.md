@@ -96,7 +96,7 @@ return `gulpSSH`
 
 ### gulpSSH.shell(commands, options)
 
-return `stream`
+return `stream`, there is a event "ssh2Data" on stream that emit ssh2 stream's chunk.
 
 #### commands
 
@@ -119,7 +119,7 @@ auto exit shell. **Default:** (true)
 
 ### gulpSSH.exec(commands, options)
 
-return `stream`
+return `stream`, there is a event "ssh2Data" on stream that emit ssh2 stream's chunk.
 
 #### commands
 
