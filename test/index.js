@@ -3,16 +3,28 @@
 var gulp = require('gulp')
 var GulpSSH = require('../index')
 var gulpSequence = require('gulp-sequence')
+var fs = require('fs')
 
 module.exports = function () {
-  var gulpSSH = new GulpSSH({
-    ignoreErrors: false,
-    sshConfig: {
+
+  var config = {}
+
+  try {
+    config = {
       host: '192.168.0.22',
       port: 22,
       username: 'root',
-      privateKey: require('fs').readFileSync('/Users/zensh/.ssh/id_rsa')
+      privateKey: fs.readFileSync('/Users/zensh/.ssh/id_rsa')
     }
+  } catch(e) {}  // swallow the exception if the file doesn't exist, we'll just use the default settings
+
+  try {
+    config = require('./test-settings')
+  } catch (e) {} // swallow the exception if the file doesn't exist, we'll just use the default settings
+
+  var gulpSSH = new GulpSSH({
+    ignoreErrors: false,
+    sshConfig: config
   })
 
   gulp.task('exec', function () {
@@ -37,6 +49,11 @@ module.exports = function () {
       .pipe(gulp.dest('logs'))
   })
 
-  gulp.task('test', gulpSequence('exec', 'sftp-read', 'sftp-write', 'shell'))
+  gulp.task('dest', function() {
+    return gulp
+      .src(['./**/*.js', '!**/node_modules/**'])
+      .pipe(gulpSSH.dest('/home/vm/test'))
+  })
 
+  gulp.task('test', gulpSequence('exec', 'sftp-read', 'sftp-write', 'shell', 'dest'))
 }

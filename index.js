@@ -8,6 +8,7 @@
  */
 
 var path = require('path')
+var fs = require('fs')
 var util = require('util')
 var EventEmitter = require('events').EventEmitter
 
@@ -224,6 +225,109 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
 
   return outStream
 
+}
+
+// Acts similarly to Gulp dest, will make dirs if not exist and copy the files
+// to the glob path
+GulpSSH.prototype.dest = function(destDir, options) {
+  if (!destDir) throw new gutil.PluginError(packageName, '`destDir` required.')
+
+  var ctx = this
+  var ssh = this.ssh2
+  var outStream
+
+  this.connect()
+
+  return through.obj(function(file, encoding, callback) {
+
+    fs.stat(file.path, function(err, stats) {
+
+      if (err) {
+        callback(new gutil.PluginError(packageName, err))
+        return
+      }
+
+      if (stats.isDirectory()) {
+        // don't bother doing anything if it's a directory but let the user know
+        gutil.log('\'' + gutil.colors.cyan(file.path) + '\' is a directory. Skipping.')
+        callback(null, file)
+        return
+      }
+
+      var outPath = path.join(destDir, file.path.replace(file.base, ''))
+      gutil.log('Preparing to write \'' + gutil.colors.cyan(outPath) + '\'')
+
+      ctx.ready(function() {
+        ssh.sftp(function(err, sftp) {
+          if (err) return callback(new gutil.PluginError(packageName, err))
+
+          options = options || {}
+          options.autoClose = true
+
+          var doWrite = function() {
+            gutil.log('Writing \'' + gutil.colors.cyan(outPath) + '\'')
+            var write = sftp.createWriteStream(outPath, options)
+
+            write
+              .on('error', function(error) {
+                err = error
+              })
+              .on('finish', function() {
+                gutil.log('Finished writing \'' + gutil.colors.cyan(outPath) + '\'')
+                sftp.end()
+                if (err) callback(err)
+                else callback(null, file)
+              })
+
+            if (file.isStream()) file.pipe(write)
+            else if (file.isBuffer()) write.end(file.contents)
+            else {
+              err = new gutil.PluginError(packageName, 'file error!')
+              write.end()
+            }
+          }
+
+          var mkDirsIfNotExist = function internalMkDirs(sftp, filePath, callback) {
+            var outPathDir = path.dirname(filePath)
+
+            sftp.exists(outPathDir, function(result) {
+              if (result) {
+                callback()
+                return
+              }
+
+              // recursively make parent directories as required
+              internalMkDirs(sftp, outPathDir, function(err) {
+                if (err) {
+                  callback(new gutil.PluginError(packageName, err))
+                  return
+                }
+
+                gutil.log('Creating directory \'' + gutil.colors.cyan(outPathDir) + '\'')
+
+                sftp.mkdir(outPathDir, function(err) {
+                  if (err) {
+                    gutil.log('Error creating directory \'' + gutil.colors.cyan(outPathDir) + '\'')
+                    callback(new gutil.PluginError(packageName, err))
+                    return
+                  }
+
+                  callback()
+                })
+              })
+            })
+          }
+
+          mkDirsIfNotExist(sftp, outPath, function(err) {
+            if (err)
+              callback(new gutil.PluginError(packageName, err))
+            else
+              doWrite()
+          })
+        })
+      })
+    })
+  })
 }
 
 GulpSSH.prototype.shell = function (commands, options) {
