@@ -49,7 +49,7 @@ module.exports = function () {
       .pipe(gulp.dest('logs'))
   })
 
-  gulp.task('dest', function() {
+  gulp.task('dest', function () {
     return gulp
       .src(['./**/*.js', '!**/node_modules/**'])
       .pipe(gulpSSH.dest('/home/vm/test'))
