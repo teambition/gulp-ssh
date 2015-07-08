@@ -1,6 +1,6 @@
 {
   "name": "gulp-ssh",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "SSH and SFTP tasks for gulp",
   "license": "MIT",
   "author": {
@@ -9,7 +9,7 @@
     "url": "https://github.com/zensh"
   },
   "engines": {
-    "node": ">=0.8.0"
+    "node": ">=0.10.0"
   },
   "main": "index.js",
   "repository": {
@@ -36,7 +36,7 @@
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-sequence": "^0.3.2",
-    "standard": "^4.5.1"
+    "standard": "^4.5.2"
   },
   "scripts": {
     "test": "standard && gulp test"

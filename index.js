@@ -153,7 +153,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
   var ctx = this
   var ssh = this.ssh2
   var outStream
-
+  options = options || {}
   if (!command) throw new gutil.PluginError(packageName, '`command` required.')
   if (!filePath) throw new gutil.PluginError(packageName, '`filePath` required.')
 
@@ -164,7 +164,6 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
       ctx.ready(function () {
         ssh.sftp(function (err, sftp) {
           if (err) return callback(new gutil.PluginError(packageName, err))
-          options = options || {}
           options.autoClose = true
           var write = sftp.createWriteStream(filePath, options)
 
@@ -196,6 +195,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
       ssh.sftp(function (err, sftp) {
         if (err) return outStream.emit('error', new gutil.PluginError(packageName, err))
         var read = sftp.createReadStream(filePath, options)
+        options.base = options.base || ''
 
         read
           .on('data', function (chunk) {
@@ -209,7 +209,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
             outStream.push(new gutil.File({
               cwd: __dirname,
               base: __dirname,
-              path: path.join(__dirname, filePath),
+              path: options.filePath || filePath,
               contents: Buffer.concat(chunks, chunkSize)
             }))
             outStream.end()
@@ -233,46 +233,57 @@ GulpSSH.prototype.dest = function (destDir, options) {
 
   var ctx = this
   var ssh = this.ssh2
-  var files = []
   var sftpClient = null
   options = options || {}
-  options.autoClose = true
+  options.autoClose = false
+
+  function getSftp (callback) {
+    if (sftpClient) return callback(null, sftpClient)
+    ctx.connect().ready(function () {
+      ssh.sftp(function (err, sftp) {
+        if (err) return callback(err)
+        sftpClient = sftp
+        callback(null, sftp)
+      })
+    })
+  }
+
+  function end (err, callback) {
+    if (sftpClient) {
+      sftpClient.end()
+      sftpClient = null
+    }
+    if (err) err = new gutil.PluginError(packageName, err)
+    callback(err)
+  }
 
   return through.obj(function (file, encoding, callback) {
-    if (!file.isNull()) files.push(file)
-    else gutil.log('"' + gutil.colors.cyan(file.path) + '" has no content. Skipping.')
-    callback(null, file)
-  }, function (callback) {
-    if (!files.length) return callback()
+    if (file.isNull()) {
+      gutil.log('"' + gutil.colors.cyan(file.path) + '" has no content. Skipping.')
+      return callback()
+    }
+    getSftp(function (err, sftp) {
+      if (err) return end(err, callback)
+      var outPath = path.join(destDir, file.path.replace(file.base, ''))
+      gutil.log('Preparing to write "' + gutil.colors.cyan(outPath) + '"')
 
-    ctx.ready(function () {
-      ssh.sftp(function (err, sftp) {
-        if (err) return end(err)
-        uploadFile()
+      internalMkDirs(sftp, outPath, function (err) {
+        if (err) return end(err, callback)
+        gutil.log('Writing \'' + gutil.colors.cyan(outPath) + '\'')
 
-        function end (err) {
-          sftp.end()
-          if (err) err = new gutil.PluginError(packageName, err)
-          callback(err)
-        }
+        file.pipe(sftp.createWriteStream(outPath, options))
+          .on('error', done)
+          .on('finish', done)
 
-        function uploadFile () {
-          var file = files.shift()
-          var outPath = path.join(destDir, file.path.replace(file.base, ''))
-          gutil.log('Preparing to write "' + gutil.colors.cyan(outPath) + '"')
-          internalMkDirs(sftpClient, outPath, function (err) {
-            if (err) return end(err)
-
-            gutil.log('Writing \'' + gutil.colors.cyan(outPath) + '\'')
-            doWrite(sftpClient, file, outPath, options, function (err) {
-              if (err) return end(err)
-              gutil.log('Finished writing \'' + gutil.colors.cyan(outPath) + '\'')
-              uploadFile()
-            })
-          })
+        function done (err) {
+          if (err) return end(err, callback)
+          gutil.log('Finished writing \'' + gutil.colors.cyan(outPath) + '\'')
+          callback()
         }
       })
     })
+  }, function (callback) {
+    end(null, callback)
   })
 }
 
@@ -339,10 +350,4 @@ function internalMkDirs (sftp, filePath, callback) {
       sftp.mkdir(outPathDir, callback)
     })
   })
-}
-
-function doWrite (sftp, file, outPath, options, callback) {
-  file.pipe(sftp.createWriteStream(outPath, options))
-    .on('error', callback)
-    .on('finish', callback)
 }

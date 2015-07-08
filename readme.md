@@ -1,6 +1,9 @@
-# gulp-ssh v0.3.3
+gulp-ssh
+====
+SSH and SFTP tasks for gulp
 
-> SSH and SFTP tasks for gulp
+[![NPM version][npm-image]][npm-url]
+[![Build Status][travis-image]][travis-url]
 
 
 ## Install
@@ -11,58 +14,67 @@ Install with [npm](https://npmjs.org/package/gulp-ssh)
 npm install --save-dev gulp-ssh
 ```
 
-
 ## Example
 
 ```js
-var gulp = require('gulp');
-var gulpSSH = require('gulp-ssh')({
-  ignoreErrors: false,
-  sshConfig: {
-    host: '192.168.0.22',
-    port: 22,
-    username: 'root',
-    privateKey: require('fs').readFileSync('/Users/zensh/.ssh/id_rsa')
-  }
-});
+'use strict'
 
-// execute commands
+var gulp = require('gulp')
+var GulpSSH = require('gulp-ssh')
+
+var config = {
+  host: '192.168.0.21',
+  port: 22,
+  username: 'iojs',
+  privateKey: fs.readFileSync('/Users/zensh/.ssh/id_rsa')
+}
+
+
+var gulpSSH = new GulpSSH({
+  ignoreErrors: false,
+  sshConfig: config
+})
+
 gulp.task('exec', function () {
   return gulpSSH
     .exec(['uptime', 'ls -a', 'pwd'], {filePath: 'commands.log'})
-    .pipe(gulp.dest('logs'));
-});
+    .pipe(gulp.dest('logs'))
+})
 
-// get file from server and write to local
+gulp.task('dest', function () {
+  return gulp
+    .src(['./**/*.js', '!**/node_modules/**'])
+    .pipe(gulpSSH.dest('/home/iojs/test/gulp-ssh/'))
+})
+
 gulp.task('sftp-read', function () {
-  return gulpSSH.sftp('read', 'pm2.json')
-    .pipe(gulp.dest(''));
-});
+  return gulpSSH.sftp('read', '/home/iojs/test/gulp-ssh/index.js', {filePath: 'index.js'})
+    .pipe(gulp.dest('logs'))
+})
 
-// put local file to server
 gulp.task('sftp-write', function () {
   return gulp.src('index.js')
-    .pipe(gulpSSH.sftp('write', 'test.js'));
-});
+    .pipe(gulpSSH.sftp('write', '/home/iojs/test/gulp-ssh/test.js'))
+})
 
-// execute commands in shell
 gulp.task('shell', function () {
   return gulpSSH
-    .shell(['cd /home/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
-    .pipe(gulp.dest('logs'));
-});
+    .shell(['cd /home/iojs/test/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
+    .pipe(gulp.dest('logs'))
+})
+
 ```
 
 ## API
 
 ```js
-var GulpSSH = require('gulp-ssh');
+var GulpSSH = require('gulp-ssh')
 ```
 
 ### GulpSSH(options)
 
 ```js
-var gulpSSH = new GulpSSH(options);
+var gulpSSH = new GulpSSH(options)
 ```
 
 #### options.sshConfig
@@ -156,6 +168,10 @@ file path to read or write on server. **Default:** (none)
 *Option*
 Type: `Object`
 
+### gulpSSH.dest(destDir, options)
+
+return `stream`, copy the files to remote through sftp, acts similarly to Gulp dest, will make dirs if not exist.
+
 ### gulpSSH.close()
 
 Close the ssh connection.
@@ -163,3 +179,9 @@ Close the ssh connection.
 ## License
 
 MIT © [Teambition](http://teambition.com)
+
+[npm-url]: https://npmjs.org/package/gulp-ssh
+[npm-image]: http://img.shields.io/npm/v/gulp-ssh.svg
+
+[travis-url]: https://travis-ci.org/teambition/gulp-ssh
+[travis-image]: http://img.shields.io/travis/teambition/gulp-ssh.svg

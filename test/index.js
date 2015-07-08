@@ -11,9 +11,9 @@ module.exports = function () {
 
   try {
     config = {
-      host: '192.168.0.22',
+      host: '192.168.0.21',
       port: 22,
-      username: 'root',
+      username: 'iojs',
       privateKey: fs.readFileSync('/Users/zensh/.ssh/id_rsa')
     }
   } catch(e) {}  // swallow the exception if the file doesn't exist, we'll just use the default settings
@@ -33,27 +33,27 @@ module.exports = function () {
       .pipe(gulp.dest('logs'))
   })
 
+  gulp.task('dest', function () {
+    return gulp
+      .src(['./**/*.js', '!**/node_modules/**'])
+      .pipe(gulpSSH.dest('/home/iojs/test/gulp-ssh/'))
+  })
+
   gulp.task('sftp-read', function () {
-    return gulpSSH.sftp('read', 'install.log')
+    return gulpSSH.sftp('read', '/home/iojs/test/gulp-ssh/index.js', {filePath: 'test.js'})
       .pipe(gulp.dest('logs'))
   })
 
   gulp.task('sftp-write', function () {
     return gulp.src('index.js')
-      .pipe(gulpSSH.sftp('write', 'test.js'))
+      .pipe(gulpSSH.sftp('write', '/home/iojs/test/gulp-ssh/test.js'))
   })
 
   gulp.task('shell', function () {
     return gulpSSH
-      .shell(['cd /home/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
+      .shell(['cd /home/iojs/test/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
       .pipe(gulp.dest('logs'))
   })
 
-  gulp.task('dest', function () {
-    return gulp
-      .src(['./**/*.js', '!**/node_modules/**'])
-      .pipe(gulpSSH.dest('/home/vm/test'))
-  })
-
-  gulp.task('test', gulpSequence('exec', 'sftp-read', 'sftp-write', 'shell', 'dest'))
+  gulp.task('test', gulpSequence('exec', 'dest', 'sftp-read', 'sftp-write', 'shell'))
 }
