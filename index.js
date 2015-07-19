@@ -209,7 +209,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
             outStream.push(new gutil.File({
               cwd: __dirname,
               base: __dirname,
-              path: options.filePath || filePath,
+              path: path.join(__dirname, options.filePath || filePath),
               contents: Buffer.concat(chunks, chunkSize)
             }))
             outStream.end()
