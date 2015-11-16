@@ -19,6 +19,7 @@ npm install --save-dev gulp-ssh
 ```js
 'use strict'
 
+var fs = require('fs');
 var gulp = require('gulp')
 var GulpSSH = require('gulp-ssh')
 
