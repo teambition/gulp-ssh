@@ -35,8 +35,8 @@ module.exports = function () {
 
   gulp.task('dest', function () {
     return gulp
-      .src(['./**/*.js', '!**/node_modules/**'])
-      .pipe(gulpSSH.dest('/home/iojs/test/gulp-ssh/'))
+      .src(['*.pdf'])
+      .pipe(gulpSSH.dest('/home/iojs/test/pdf/'))
   })
 
   gulp.task('sftp-read', function () {

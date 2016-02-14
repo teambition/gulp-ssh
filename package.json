@@ -1,6 +1,6 @@
 {
   "name": "gulp-ssh",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "SSH and SFTP tasks for gulp",
   "license": "MIT",
   "author": {
@@ -29,14 +29,14 @@
     "upload"
   ],
   "dependencies": {
-    "gulp-util": "^3.0.6",
-    "through2": "^2.0.0",
-    "ssh2": "~0.4.11"
+    "gulp-util": "^3.0.7",
+    "through2": "^2.0.1",
+    "ssh2": "~0.4.13"
   },
   "devDependencies": {
-    "gulp": "^3.9.0",
-    "gulp-sequence": "^0.4.1",
-    "standard": "^5.2.2"
+    "gulp": "^3.9.1",
+    "gulp-sequence": "^0.4.4",
+    "standard": "^6.0.5"
   },
   "scripts": {
     "test": "standard && gulp test"
