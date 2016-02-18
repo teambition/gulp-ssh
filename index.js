@@ -264,7 +264,8 @@ GulpSSH.prototype.dest = function (destDir, options) {
     }
     getSftp(function (err, sftp) {
       if (err) return end(err, callback)
-      var outPath = path.join(destDir, file.path.replace(file.base, '')).replace(/\\/g, '/')
+      var baseRegexp = new RegExp('^' + file.base.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")),
+          outPath = path.join(destDir, file.path.replace(baseRegexp, '')).replace(/\\/g, '/')
       gutil.log('Preparing to write "' + gutil.colors.cyan(outPath) + '"')
 
       internalMkDirs(sftp, outPath, function (err) {
