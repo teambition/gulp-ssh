@@ -185,7 +185,6 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
         })
       })
     })
-
   } else if (command === 'read') {
     var chunkSize = 0
     var chunks = []
@@ -223,7 +222,6 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
   } else throw new gutil.PluginError(packageName, 'Command "' + command + '" not support.')
 
   return outStream
-
 }
 
 // Acts similarly to Gulp dest, will make dirs if not exist and copy the files
@@ -264,8 +262,8 @@ GulpSSH.prototype.dest = function (destDir, options) {
     }
     getSftp(function (err, sftp) {
       if (err) return end(err, callback)
-      var baseRegexp = new RegExp('^' + file.base.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")),
-          outPath = path.join(destDir, file.path.replace(baseRegexp, '')).replace(/\\/g, '/')
+      var baseRegexp = new RegExp('^' + file.base.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&'))
+      var outPath = path.join(destDir, file.path.replace(baseRegexp, '')).replace(/\\/g, '/')
       gutil.log('Preparing to write "' + gutil.colors.cyan(outPath) + '"')
 
       internalMkDirs(sftp, outPath, function (err) {
@@ -322,8 +320,8 @@ GulpSSH.prototype.shell = function (commands, options) {
         })
         .on('close', endStream)
         .stderr.on('data', function (data) {
-        outStream.emit('error', new gutil.PluginError(packageName, data + ''))
-      })
+          outStream.emit('error', new gutil.PluginError(packageName, data + ''))
+        })
 
       var lastCommand
       commands.forEach(function (command) {

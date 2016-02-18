@@ -6,7 +6,6 @@ var gulpSequence = require('gulp-sequence')
 var fs = require('fs')
 
 module.exports = function () {
-
   var config = {}
 
   try {
@@ -16,7 +15,7 @@ module.exports = function () {
       username: 'iojs',
       privateKey: fs.readFileSync('/Users/zensh/.ssh/id_rsa')
     }
-  } catch(e) {}  // swallow the exception if the file doesn't exist, we'll just use the default settings
+  } catch (e) {}  // swallow the exception if the file doesn't exist, we'll just use the default settings
 
   try {
     config = require('./test-settings')
