@@ -117,6 +117,7 @@ GulpSSH.prototype.exec = function (commands, options) {
       contents: Buffer.concat(chunks, chunkSize)
     }))
     outStream.end()
+    ctx.close()
   }
 
   function execCommand () {
