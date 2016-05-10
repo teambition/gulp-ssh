@@ -11,7 +11,6 @@ var path = require('path')
 var util = require('util')
 var EventEmitter = require('events').EventEmitter
 
-var gulp = require('gulp')
 var gutil = require('gulp-util')
 var through = require('through2')
 var Client = require('ssh2').Client
@@ -60,6 +59,8 @@ function GulpSSH (options) {
     })
 
   EventEmitter.call(this)
+
+  var gulp = this.options.gulp || require('gulp')
   gulp.once('stop', function () {
     ctx.close()
   })

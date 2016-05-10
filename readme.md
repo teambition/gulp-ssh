@@ -93,6 +93,8 @@ Type: `Object`
 
 * **privateKey** - `String` or `Buffer` - Buffer or string that contains a private key for key-based user authentication (OpenSSH format). **Default:** (none)
 
+* **gulp** - `gulp` instance.
+
 More [SSH Connection methods](https://github.com/mscdex/ssh2#connection-methods)
 
 #### options.ignoreErrors
@@ -102,10 +104,6 @@ Type: `Boolean`
 Ignore errors when executing commands. **Default:** (false)
 
 *****
-
-### gulpSSH.connect(sshConfig)
-
-return `gulpSSH`
 
 ### gulpSSH.shell(commands, options)
 
