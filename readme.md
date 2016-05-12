@@ -1,3 +1,4 @@
+
 gulp-ssh
 ====
 SSH and SFTP tasks for gulp
@@ -93,9 +94,14 @@ Type: `Object`
 
 * **privateKey** - `String` or `Buffer` - Buffer or string that contains a private key for key-based user authentication (OpenSSH format). **Default:** (none)
 
-* **gulp** - `gulp` instance.
 
 More [SSH Connection methods](https://github.com/mscdex/ssh2#connection-methods)
+
+#### options.gulp
+
+Type: `gulp instance
+
+Pass the gulp instance to be use with gulp-ssh (see #42). **Default:** (none)
 
 #### options.ignoreErrors
 
