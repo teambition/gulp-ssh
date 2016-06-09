@@ -1,11 +1,9 @@
-
 gulp-ssh
 ====
 SSH and SFTP tasks for gulp
 
 [![NPM version][npm-image]][npm-url]
-[![Build Status][travis-image]][travis-url]
-
+[![Downloads][downloads-image]][downloads-url]
 
 ## Install
 
@@ -27,10 +25,9 @@ var GulpSSH = require('gulp-ssh')
 var config = {
   host: '192.168.0.21',
   port: 22,
-  username: 'iojs',
+  username: 'node',
   privateKey: fs.readFileSync('/Users/zensh/.ssh/id_rsa')
 }
-
 
 var gulpSSH = new GulpSSH({
   ignoreErrors: false,
@@ -64,7 +61,6 @@ gulp.task('shell', function () {
     .shell(['cd /home/iojs/test/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
     .pipe(gulp.dest('logs'))
 })
-
 ```
 
 ## API
@@ -94,14 +90,7 @@ Type: `Object`
 
 * **privateKey** - `String` or `Buffer` - Buffer or string that contains a private key for key-based user authentication (OpenSSH format). **Default:** (none)
 
-
 More [SSH Connection methods](https://github.com/mscdex/ssh2#connection-methods)
-
-#### options.gulp
-
-Type: `gulp instance
-
-Pass the gulp instance to be use with gulp-ssh (see #42). **Default:** (none)
 
 #### options.ignoreErrors
 
@@ -177,16 +166,12 @@ Type: `Object`
 
 return `stream`, copy the files to remote through sftp, acts similarly to Gulp dest, will make dirs if not exist.
 
-### gulpSSH.close()
-
-Close the ssh connection.
-
 ## License
 
-MIT © [Teambition](http://teambition.com)
+MIT © [Teambition](https://www.teambition.com)
 
 [npm-url]: https://npmjs.org/package/gulp-ssh
 [npm-image]: http://img.shields.io/npm/v/gulp-ssh.svg
 
-[travis-url]: https://travis-ci.org/teambition/gulp-ssh
-[travis-image]: http://img.shields.io/travis/teambition/gulp-ssh.svg
+[downloads-url]: https://npmjs.org/package/gulp-ssh
+[downloads-image]: http://img.shields.io/npm/dm/gulp-ssh.svg?style=flat-square

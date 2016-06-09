@@ -34,23 +34,30 @@ module.exports = function () {
 
   gulp.task('dest', function () {
     return gulp
-      .src(['*.pdf'])
-      .pipe(gulpSSH.dest('/home/iojs/test/pdf/'))
+      .src('node_modules/ssh2/**/*')
+      .pipe(gulpSSH.dest('/home/iojs/test/ssh2/'))
   })
 
   gulp.task('sftp-read', function () {
-    return gulpSSH.sftp('read', '/home/iojs/test/gulp-ssh/index.js', {filePath: 'test.js'})
+    return gulpSSH.sftp('read', '/home/iojs/test/ssh2/package.json', {filePath: 'ssh2-package.json'})
       .pipe(gulp.dest('logs'))
   })
 
   gulp.task('sftp-write', function () {
-    return gulp.src('index.js')
-      .pipe(gulpSSH.sftp('write', '/home/iojs/test/gulp-ssh/test.js'))
+    return gulp.src('test/index.js')
+      .pipe(gulpSSH.sftp('write', '/home/iojs/test/gulp-ssh-test.js'))
   })
 
   gulp.task('shell', function () {
     return gulpSSH
-      .shell(['cd /home/iojs/test/thunks', 'git pull', 'npm install', 'npm update', 'npm test'], {filePath: 'shell.log'})
+      .shell([
+        'cd /home/iojs/test',
+        'rm -rf thunks',
+        'git clone https://github.com/thunks/thunks.git',
+        'cd thunks',
+        'npm install',
+        'npm test'
+      ], {filePath: 'shell.log'})
       .pipe(gulp.dest('logs'))
   })
 

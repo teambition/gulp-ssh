@@ -3,7 +3,6 @@
  * gulp-ssh
  * https://github.com/teambition/gulp-ssh
  *
- * Copyright (c) 2014 Yan Qing
  * Licensed under the MIT license.
  */
 
@@ -18,87 +17,63 @@ var packageName = require('./package.json').name
 
 module.exports = GulpSSH
 
+Client.prototype.gulpId = null
+Client.prototype.gulpQueue = null
+Client.prototype.gulpConnected = false
+Client.prototype.gulpFlushReady = function () {
+  this.gulpConnected = true
+  while (this.gulpQueue.length) this.gulpQueue.shift().call(this)
+}
+Client.prototype.gulpReady = function (cb) {
+  if (this.gulpConnected) cb.call(this)
+  else this.gulpQueue.push(cb)
+}
+
 function GulpSSH (options) {
   if (!(this instanceof GulpSSH)) return new GulpSSH(options)
-  var ctx = this
-
-  this.options = options || {}
-  this._connecting = false
-  this._connected = false
-  this._ended = false
-  this._readyEvents = []
-
-  this.ssh2 = new Client()
-  this.ssh2
-    .on('connect', function () {
-      gutil.log(packageName + ' :: Connect...')
-      ctx.emit('connect')
-    })
-    .on('ready', function () {
-      gutil.log(packageName + ' :: Ready')
-      ctx._connecting = false
-      ctx._connected = true
-      flushReady(ctx)
-      ctx.emit('ready')
-    })
-    .on('error', function (err) {
-      gutil.colors.red(new gutil.PluginError(packageName, err))
-      ctx.emit('error', err)
-    })
-    .on('end', function () {
-      gutil.log(packageName + ' :: End')
-      ctx._connecting = false
-      ctx._connected = false
-      ctx.emit('end')
-    })
-    .on('close', function (hadError) {
-      gutil.log(packageName + ' :: Close')
-      ctx._connecting = false
-      ctx._connected = false
-      ctx.emit('close', hadError)
-    })
-
+  if (!options || !options.sshConfig) throw new Error('options.sshConfig required!')
+  this.options = options
+  this.connections = Object.create(null)
   EventEmitter.call(this)
-
-  var gulp = this.options.gulp || require('gulp')
-  gulp.once('stop', function () {
-    ctx.close()
-  })
 }
 
 util.inherits(GulpSSH, EventEmitter)
 
-function flushReady (ctx) {
-  if (!ctx._connected) return
-  while (ctx._readyEvents.length) ctx._readyEvents.shift().call(ctx)
-}
+var gulpId = 0
+GulpSSH.prototype.getClient = function () {
+  var ctx = this
+  var ssh = new Client()
+  ssh.gulpId = gulpId++
+  ssh.gulpQueue = []
+  ssh.gulpConnected = false
+  this.connections[ssh.gulpId] = ssh
 
-GulpSSH.prototype.connect = function (options) {
-  if (options) this.options.sshConfig = options
-  if (!this._connecting && !this._connected) {
-    this._connecting = true
-    this.ssh2.connect(this.options.sshConfig)
-  }
-  return this
-}
-
-GulpSSH.prototype.ready = function (fn) {
-  this._readyEvents.push(fn)
-  flushReady(this)
+  ssh
+    .on('error', function (err) {
+      ctx.emit('error', new gutil.PluginError(packageName, err))
+    })
+    .on('end', function () {
+      delete ctx.connections[this.gulpId]
+    })
+    .on('close', function () {
+      delete ctx.connections[this.gulpId]
+    })
+    .on('ready', ssh.gulpFlushReady)
+    .connect(this.options.sshConfig)
+  return ssh
 }
 
 GulpSSH.prototype.close = function () {
-  if (this.ended) return
-  this._connecting = false
-  this._connected = false
-  this._ended = true
-  this._readyEvents.length = 0
-  this.ssh2.end()
+  var connections = this.connections
+  Object.keys(connections).forEach(function (id) {
+    connections[id].end()
+    delete connections[id]
+  })
 }
 
 GulpSSH.prototype.exec = function (commands, options) {
   var ctx = this
-  var ssh = this.ssh2
+  var ssh = this.getClient()
   var chunkSize = 0
   var chunks = []
   var outStream = through.obj()
@@ -108,7 +83,7 @@ GulpSSH.prototype.exec = function (commands, options) {
   options = options || {}
   commands = Array.isArray(commands) ? commands.slice() : [commands]
 
-  this.connect().ready(execCommand)
+  ssh.gulpReady(execCommand)
 
   function endStream () {
     outStream.push(new gutil.File({
@@ -117,6 +92,8 @@ GulpSSH.prototype.exec = function (commands, options) {
       path: path.join(__dirname, options.filePath || 'gulp-ssh.exec.log'),
       contents: Buffer.concat(chunks, chunkSize)
     }))
+
+    ssh.end()
     outStream.end()
   }
 
@@ -151,18 +128,15 @@ GulpSSH.prototype.exec = function (commands, options) {
 }
 
 GulpSSH.prototype.sftp = function (command, filePath, options) {
-  var ctx = this
-  var ssh = this.ssh2
   var outStream
+  var ssh = this.getClient()
   options = options || {}
   if (!command) throw new gutil.PluginError(packageName, '`command` required.')
   if (!filePath) throw new gutil.PluginError(packageName, '`filePath` required.')
 
-  this.connect()
-
   if (command === 'write') {
     outStream = through.obj(function (file, encoding, callback) {
-      ctx.ready(function () {
+      ssh.gulpReady(function () {
         ssh.sftp(function (err, sftp) {
           if (err) return callback(new gutil.PluginError(packageName, err))
           options.autoClose = true
@@ -179,19 +153,23 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
             })
 
           if (file.isStream()) file.pipe(write)
-          else if (file.isBuffer()) write.end(file.contents); else {
+          else if (file.isBuffer()) write.end(file.contents)
+          else {
             err = new gutil.PluginError(packageName, 'file error!')
             write.end()
           }
         })
       })
+    }, function (callback) {
+      ssh.end()
+      callback()
     })
   } else if (command === 'read') {
     var chunkSize = 0
     var chunks = []
 
     outStream = through.obj()
-    ctx.ready(function () {
+    ssh.gulpReady(function () {
       ssh.sftp(function (err, sftp) {
         if (err) return outStream.emit('error', new gutil.PluginError(packageName, err))
         var read = sftp.createReadStream(filePath, options)
@@ -212,11 +190,12 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
               path: path.join(__dirname, options.filePath || filePath),
               contents: Buffer.concat(chunks, chunkSize)
             }))
-            outStream.end()
             this.close()
           })
           .on('close', function () {
             sftp.end()
+            ssh.end()
+            outStream.end()
           })
       })
     })
@@ -230,15 +209,14 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
 GulpSSH.prototype.dest = function (destDir, options) {
   if (!destDir) throw new gutil.PluginError(packageName, '`destDir` required.')
 
-  var ctx = this
-  var ssh = this.ssh2
   var sftpClient = null
+  var ssh = this.getClient()
   options = options || {}
   options.autoClose = false
 
   function getSftp (callback) {
     if (sftpClient) return callback(null, sftpClient)
-    ctx.connect().ready(function () {
+    ssh.gulpReady(function () {
       ssh.sftp(function (err, sftp) {
         if (err) return callback(err)
         sftpClient = sftp
@@ -252,6 +230,7 @@ GulpSSH.prototype.dest = function (destDir, options) {
       sftpClient.end()
       sftpClient = null
     }
+    ssh.end()
     if (err) err = new gutil.PluginError(packageName, err)
     callback(err)
   }
@@ -288,9 +267,9 @@ GulpSSH.prototype.dest = function (destDir, options) {
 }
 
 GulpSSH.prototype.shell = function (commands, options) {
-  var ssh = this.ssh2
   var chunkSize = 0
   var chunks = []
+  var ssh = this.getClient()
   var outStream = through.obj()
 
   if (!commands) throw new gutil.PluginError(packageName, '`commands` required.')
@@ -305,10 +284,12 @@ GulpSSH.prototype.shell = function (commands, options) {
       path: path.join(__dirname, options.filePath || 'gulp-ssh.exec.log'),
       contents: Buffer.concat(chunks, chunkSize)
     }))
+
+    ssh.end()
     outStream.end()
   }
 
-  this.connect().ready(function () {
+  ssh.gulpReady(function () {
     if (commands.length === 0) return endStream()
     ssh.shell(function (err, stream) {
       if (err) return outStream.emit('error', new gutil.PluginError(packageName, err))
