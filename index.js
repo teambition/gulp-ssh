@@ -95,6 +95,7 @@ GulpSSH.prototype.exec = function (commands, options) {
 
     ssh.end()
     outStream.end()
+    ctx.close()
   }
 
   function execCommand () {
