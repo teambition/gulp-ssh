@@ -246,7 +246,6 @@ GulpSSH.prototype.dest = function (destDir, options) {
 
         internalRemove(sftp, outPath, function(err) {
           if (err) return end(err, callback)
-          g
         })
         
       })
@@ -333,11 +332,11 @@ GulpSSH.prototype.shell = function (commands, options) {
 }
 
 // function internalRemove(sftp, filePath, callback) {
-function internalRemove(sftp, filePath) {
+function internalRemove(sftp, filePath, callback) {
   sftp.exists(filePath, function(result) {
     if (!result) return
     gutil.log('Deleting \'' + gutil.colors.red(filePath) + '\'')
-    sftp.remove(filePath);
+    sftp.unlink(filePath, callback)
   })
 }
 
