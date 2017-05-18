@@ -336,7 +336,7 @@ GulpSSH.prototype.shell = function (commands, options) {
 function internalRemove(sftp, filePath) {
   sftp.exists(filePath, function(result) {
     if (!result) return
-    gutil.log('Deleting \'' + gutils.colors.red(filePath) + '\'')
+    gutil.log('Deleting \'' + gutil.colors.red(filePath) + '\'')
     sftp.remove(filePath);
   })
 }
