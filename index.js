@@ -214,6 +214,8 @@ GulpSSH.prototype.dest = function (destDir, options) {
   options = options || {}
   options.autoClose = false
 
+  var deleteRemote = options.deleteRemote || false
+
   function getSftp (callback) {
     if (sftpClient) return callback(null, sftpClient)
     ssh.gulpReady(function () {
@@ -237,19 +239,21 @@ GulpSSH.prototype.dest = function (destDir, options) {
 
   return through.obj(function (file, encoding, callback) {
     if (file.isNull()) {
-      gutil.log('"' + gutil.colors.cyan(file.path) + '" has no content. Attempting delete.')
-      getSftp(function (err, sftp) {
-        if (err) return end(err, callback)
-        var baseRegexp = new RegExp('^' + file.base.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&'))
-        var outPath = path.join(destDir, file.path.replace(baseRegexp, '')).replace(/\\/g, '/')
-        gutil.log('Preparing to delete "' + gutil.colors.red(outPath) + '"')
-
-        internalRemove(sftp, outPath, function(err) {
+      if (deleteRemote) {
+        gutil.log('"' + gutil.colors.cyan(file.path) + '" has no content. Attempting delete.')
+        getSftp(function (err, sftp) {
           if (err) return end(err, callback)
-        })
-        
-      })
+          var baseRegexp = new RegExp('^' + file.base.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&'))
+          var outPath = path.join(destDir, file.path.replace(baseRegexp, '')).replace(/\\/g, '/')
+          gutil.log('Preparing to delete "' + gutil.colors.red(outPath) + '"')
 
+          internalRemove(sftp, outPath, function (err) {
+            if (err) return end(err, callback)
+          })
+        })
+      } else {
+        gutil.log('"' + gutil.colors.cyan(file.path) + '" has no content. Skipping.')
+      }
       return callback()
     }
     getSftp(function (err, sftp) {

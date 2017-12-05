@@ -166,6 +166,18 @@ Type: `Object`
 
 return `stream`, copy the files to remote through sftp, acts similarly to Gulp dest, will make dirs if not exist.
 
+#### options
+
+*Option*
+Type: `Object`
+
+#### options.deleteRemote
+
+*Option*
+Type: `Boolean`
+
+should gulp-ssh delete remote files when they are deleted locally
+
 ## License
 
 MIT © [Teambition](https://www.teambition.com)
