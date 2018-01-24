@@ -152,7 +152,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
               else callback(null, file)
             })
 
-          if (file.isStream()) file.pipe(write)
+          if (file.isStream()) file.contents.pipe(write)
           else if (file.isBuffer()) write.end(file.contents)
           else {
             err = new gutil.PluginError(packageName, 'file error!')
@@ -250,9 +250,17 @@ GulpSSH.prototype.dest = function (destDir, options) {
         if (err) return end(err, callback)
         gutil.log('Writing \'' + gutil.colors.cyan(outPath) + '\'')
 
-        file.pipe(sftp.createWriteStream(outPath, options))
+        var write = sftp.createWriteStream(outPath, options)
+
+        write
           .on('error', done)
           .on('finish', done)
+
+        if (file.isStream()) {
+          file.contents.pipe(write)
+        } else if (file.isBuffer()) {
+          write.end(file.contents)
+        }
 
         function done (err) {
           if (err) return end(err, callback)
