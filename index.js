@@ -6,14 +6,14 @@
  * Licensed under the MIT license.
  */
 
-var path = require('path')
-var util = require('util')
-var EventEmitter = require('events').EventEmitter
+const path = require('path')
+const util = require('util')
+const EventEmitter = require('events').EventEmitter
 
-var gutil = require('gulp-util')
-var through = require('through2')
-var Client = require('ssh2').Client
-var packageName = require('./package.json').name
+const gutil = require('gulp-util')
+const through = require('through2')
+const Client = require('ssh2').Client
+const packageName = require('./package.json').name
 
 module.exports = GulpSSH
 
