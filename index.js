@@ -242,7 +242,8 @@ GulpSSH.prototype.dest = function (destDir, options) {
     }
     getSftp(function (err, sftp) {
       if (err) return end(err, callback)
-      var outPath = path.join(destDir, file.relative.replace(/\\/g, '/'))
+      var outPath = path.join(destDir, file.relative)
+      if (path.sep === '\\') outPath = outPath.replace(/\\/g, '/')
       gutil.log('Preparing to write "' + gutil.colors.cyan(outPath) + '"')
 
       internalMkDirs(sftp, outPath, function (err) {
