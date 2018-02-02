@@ -1,0 +1,2 @@
+SSH_SERVER_HOME=$(node -p -e 'require("path").resolve("test/etc/sshd")')
+SSH_CLIENT_HOME=$(node -p -e 'require("path").resolve("test/etc/ssh")')

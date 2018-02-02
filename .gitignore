@@ -4,3 +4,4 @@ node_modules
 logs
 debug
 *.node
+/test/etc/
