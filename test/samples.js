@@ -1,7 +1,7 @@
 'use strict'
 
 var gulp = require('gulp')
-var GulpSSH = require('../index')
+var GulpSSH = require('..')
 var gulpSequence = require('gulp-sequence')
 var fs = require('fs')
 
@@ -61,5 +61,5 @@ module.exports = function () {
       .pipe(gulp.dest('logs'))
   })
 
-  gulp.task('test', gulpSequence('exec', 'dest', 'sftp-read', 'sftp-write', 'shell'))
+  gulp.task('samples', gulpSequence('exec', 'dest', 'sftp-read', 'sftp-write', 'shell'))
 }

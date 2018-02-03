@@ -1,9 +1,9 @@
 'use strict'
 
 var gulp = require('gulp')
-var test = require('./test/index')
+var samples = require('./test/samples')
 var gulpSequence = require('gulp-sequence')
 
-test()
+samples()
 
-gulp.task('default', gulpSequence('test'))
+gulp.task('default', gulpSequence('samples'))
