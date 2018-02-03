@@ -8,6 +8,6 @@ node_js:
 before_script:
 - test/scripts/ssh-setup.sh
 script:
-- yarn run mocha
+- yarn test
 after_script:
 - test/scripts/ssh-teardown.sh

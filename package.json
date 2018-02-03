@@ -43,8 +43,8 @@
     "standard": "^10.0.3"
   },
   "scripts": {
-    "test": "standard && gulp test",
-    "mocha": "mocha"
+    "test": "standard && mocha",
+    "samples": "gulp samples"
   },
   "ignore": [
     "**/.*",

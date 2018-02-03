@@ -9,9 +9,11 @@ Port 2222
 ListenAddress 127.0.0.1
 HostKey $SSH_SERVER_HOME/host_rsa
 PidFile $SSH_SERVER_HOME/pid
-PasswordAuthentication yes
+PasswordAuthentication no
 PubkeyAuthentication yes
 ChallengeResponseAuthentication no
+Subsystem sftp /usr/lib/openssh/sftp-server
+UsePAM no
 EOF
 ssh-keygen -t rsa -b 4096 -N "" -f $SSH_SERVER_HOME/host_rsa -q
 /usr/sbin/sshd -f $SSH_SERVER_HOME/sshd_config

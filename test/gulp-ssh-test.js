@@ -7,12 +7,11 @@ const { expect } = chai
 const fs = require('fs-extra')
 const gulp = require('gulp')
 const GulpSSH = require('..')
-const ospath = require('path')
-const { posix: path } = ospath
+const path = require('path')
 const { obj: map } = require('through2')
 
-const DEST_DIR = ospath.join(__dirname, 'dest')
-const FIXTURES_DIR = ospath.join(__dirname, 'fixtures')
+const DEST_DIR = path.join(__dirname, 'dest')
+const FIXTURES_DIR = path.join(__dirname, 'fixtures')
 
 describe('GulpSSH', () => {
   let gulpSSH
@@ -20,7 +19,7 @@ describe('GulpSSH', () => {
     host: 'localhost',
     port: process.env.CI ? 2222 : 22,
     username: process.env.USER,
-    privateKey: fs.readFileSync(ospath.resolve(__dirname, 'etc/ssh/id_rsa'))
+    privateKey: fs.readFileSync(path.resolve(__dirname, 'etc/ssh/id_rsa'))
   }
 
   const collectFiles = (files, cb) => {
@@ -111,9 +110,9 @@ describe('GulpSSH', () => {
           expect(DEST_DIR).to.be.a.directory()
           files.forEach((file) => {
             if (file.isNull()) {
-              expect(ospath.join(DEST_DIR, file.relative)).to.be.a.directory()
+              expect(path.join(DEST_DIR, file.relative)).to.be.a.directory()
             } else {
-              expect(ospath.join(DEST_DIR, file.relative)).to.be.a.file().with.contents(file.contents.toString())
+              expect(path.join(DEST_DIR, file.relative)).to.be.a.file().with.contents(file.contents.toString())
             }
           })
           done()
@@ -137,8 +136,8 @@ describe('GulpSSH', () => {
     })
 
     it('should read file over sftp', (done) => {
-      const localSrcFile = ospath.join(FIXTURES_DIR, 'folder/file-in-folder.txt')
-      const remoteSrcFile = ospath.relative(process.env.HOME, localSrcFile)
+      const localSrcFile = path.join(FIXTURES_DIR, 'folder/file-in-folder.txt')
+      const remoteSrcFile = path.relative(process.env.HOME, localSrcFile)
       const filePath = 'file-copy.txt'
       const files = []
       gulpSSH
@@ -154,9 +153,9 @@ describe('GulpSSH', () => {
     it('should write file over sftp', (done) => {
       clean = true
       const srcRelFile = 'folder/file-in-folder.txt'
-      const srcAbsFile = ospath.join(FIXTURES_DIR, srcRelFile)
-      const localDestFile = ospath.join(DEST_DIR, 'file-copy.txt')
-      const remoteDestFile = ospath.relative(process.env.HOME, localDestFile)
+      const srcAbsFile = path.join(FIXTURES_DIR, srcRelFile)
+      const localDestFile = path.join(DEST_DIR, 'file-copy.txt')
+      const remoteDestFile = path.relative(process.env.HOME, localDestFile)
       // NOTE sftp write requires dest directory to exist
       fs.ensureDirSync(DEST_DIR)
       gulp
