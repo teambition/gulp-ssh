@@ -34,12 +34,15 @@
     "ssh2": "~0.5.5"
   },
   "devDependencies": {
+    "chai": "^4.1.2",
     "gulp": "^3.9.1",
     "gulp-sequence": "^1.0.0",
+    "mocha": "^5.0.0",
     "standard": "^10.0.3"
   },
   "scripts": {
-    "test": "standard && gulp test"
+    "test": "standard && gulp test",
+    "mocha": "mocha test/gulp-ssh-test.js"
   },
   "ignore": [
     "**/.*",
