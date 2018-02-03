@@ -4,7 +4,9 @@ git:
   depth: 2
 language: node_js
 node_js:
+- 6
 - 8
+- 9
 before_script:
 - test/scripts/ssh-setup.sh
 script:
