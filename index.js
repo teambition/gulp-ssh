@@ -199,7 +199,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
           })
       })
     })
-  } else throw new gutil.PluginError(packageName, 'Command "' + command + '" not support.')
+  } else throw new gutil.PluginError(packageName, 'Command "' + command + '" not supported.')
 
   return outStream
 }
