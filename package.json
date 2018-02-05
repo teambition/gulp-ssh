@@ -45,7 +45,7 @@
   },
   "scripts": {
     "coverage": "nyc mocha",
-    "test": "standard && mocha",
+    "test": "standard && mocha -t 5000",
     "samples": "gulp samples"
   },
   "ignore": [

@@ -118,6 +118,27 @@ describe('GulpSSH', () => {
           done()
         })
     })
+
+    it('should create interim directories on server', (done) => {
+      const nestedDestDir = path.join(DEST_DIR, 'a/b/c')
+      const files = []
+      gulp
+        .src('**/*', { cwd: srcDir, cwdbase: true })
+        .pipe(collectFiles(files))
+        .pipe(gulpSSH.dest(nestedDestDir))
+        .on('finish', () => {
+          expect(DEST_DIR).to.be.a.directory()
+          expect(nestedDestDir).to.be.a.directory()
+          files.forEach((file) => {
+            if (file.isNull()) {
+              expect(path.join(nestedDestDir, file.relative)).to.be.a.directory()
+            } else {
+              expect(path.join(nestedDestDir, file.relative)).to.be.a.file().with.contents(file.contents.toString())
+            }
+          })
+          done()
+        })
+    })
   })
 
   describe('sftp', () => {
@@ -132,7 +153,7 @@ describe('GulpSSH', () => {
     })
 
     it('should throw error if command is unknown', () => {
-      expect(() => gulpSSH.sftp('wat', '/path/to/file.txt')).to.throw('Command "wat" not support.')
+      expect(() => gulpSSH.sftp('wat', '/path/to/file.txt')).to.throw('Command "wat" not supported.')
     })
 
     it('should read file over sftp', (done) => {
