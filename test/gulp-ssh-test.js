@@ -132,7 +132,7 @@ describe('GulpSSH', () => {
     })
 
     it('should throw error if command is unknown', () => {
-      expect(() => gulpSSH.sftp('wat', '/path/to/file.txt')).to.throw('Command "wat" not support.')
+      expect(() => gulpSSH.sftp('wat', '/path/to/file.txt')).to.throw('Command "wat" not supported.')
     })
 
     it('should read file over sftp', (done) => {
