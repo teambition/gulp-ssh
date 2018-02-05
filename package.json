@@ -40,9 +40,11 @@
     "gulp": "^3.9.1",
     "gulp-sequence": "^1.0.0",
     "mocha": "^5.0.0",
+    "nyc": "^11.4.1",
     "standard": "^10.0.3"
   },
   "scripts": {
+    "coverage": "nyc mocha",
     "test": "standard && mocha -t 5000",
     "samples": "gulp samples"
   },
@@ -51,5 +53,10 @@
     "node_modules",
     "test",
     "gulpfile.js"
-  ]
+  ],
+  "nyc": {
+    "reporter": [
+      "lcov"
+    ]
+  }
 }
