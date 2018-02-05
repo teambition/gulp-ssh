@@ -4,6 +4,7 @@ SSH and SFTP tasks for gulp
 
 [![NPM version][npm-image]][npm-url]
 [![Downloads][downloads-image]][downloads-url]
+[![CI Status][ci-image]][ci-url]
 
 ## Install
 
@@ -174,4 +175,7 @@ MIT © [Teambition](https://www.teambition.com)
 [npm-image]: http://img.shields.io/npm/v/gulp-ssh.svg
 
 [downloads-url]: https://npmjs.org/package/gulp-ssh
-[downloads-image]: http://img.shields.io/npm/dm/gulp-ssh.svg?style=flat-square
+[downloads-image]: http://img.shields.io/npm/dm/gulp-ssh.svg
+
+[ci-url]: https://travis-ci.org/teambition/gulp-ssh
+[ci-image]: https://img.shields.io/travis/teambition/gulp-ssh/master.svg
