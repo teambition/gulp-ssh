@@ -91,7 +91,9 @@ Type: `Object`
 
 * **privateKey** - `String` or `Buffer` - Buffer or string that contains a private key for key-based user authentication (OpenSSH format). **Default:** (none)
 
-More [SSH Connection methods](https://github.com/mscdex/ssh2#connection-methods)
+* ...and so forth.
+
+For a full list of connection options, see the reference for the [connect()](https://github.com/mscdex/ssh2#client-methods) method from the SSH2 module.
 
 #### options.ignoreErrors
 
