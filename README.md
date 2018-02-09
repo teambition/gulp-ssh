@@ -107,6 +107,9 @@ Ignore errors when executing commands. **Default:** (false)
 
 return `stream`, there is a event "ssh2Data" on stream that emit ssh2 stream's chunk.
 
+**IMPORTANT:** If one of the commands requires user interaction, this function will hang.
+Observe the ssh2Data event to debug the interaction with the server.
+
 #### commands
 
 *Required*
@@ -129,6 +132,9 @@ auto exit shell. **Default:** (true)
 ### gulpSSH.exec(commands, options)
 
 return `stream`, there is a event "ssh2Data" on stream that emit ssh2 stream's chunk.
+
+**IMPORTANT:** If one of the commands requires user interaction, this function will hang.
+Observe the ssh2Data event to debug the interaction with the server.
 
 #### commands
 
