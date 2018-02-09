@@ -7,6 +7,7 @@ const { expect } = chai
 const fs = require('fs-extra')
 const gulp = require('gulp')
 const GulpSSH = require('..')
+const os = require('os')
 const path = require('path')
 const { obj: map } = require('through2')
 
@@ -15,11 +16,12 @@ const FIXTURES_DIR = path.join(__dirname, 'fixtures')
 
 describe('GulpSSH', () => {
   let gulpSSH
+  const privateKeyFile = path.resolve(__dirname, 'etc/ssh/id_rsa')
   let sshConfig = {
     host: 'localhost',
     port: process.env.CI ? 2222 : 22,
     username: process.env.USER,
-    privateKey: fs.readFileSync(path.resolve(__dirname, 'etc/ssh/id_rsa'))
+    privateKey: fs.readFileSync(privateKeyFile)
   }
 
   const collectFiles = (files, cb) => {
@@ -42,6 +44,14 @@ describe('GulpSSH', () => {
     it('should fail if options are not provided', () => {
       expect(GulpSSH).to.throw('sshConfig required')
     })
+
+    it('should defer loading of private key specified in privateKeyFile option', () => {
+      const localSshConfig = Object.assign({}, sshConfig, { privateKeyFile })
+      delete localSshConfig.privateKey
+      gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
+      expect(gulpSSH.options.sshConfig.privateKeyFile).to.equal(privateKeyFile)
+      expect(gulpSSH.options.sshConfig).to.not.have.property('privateKey')
+    })
   })
 
   describe('connect', () => {
@@ -49,15 +59,62 @@ describe('GulpSSH', () => {
       gulpSSH.on('error', done)
       gulpSSH.getClient().gulpReady(function () {
         expect(this.gulpConnected).to.equal(true)
+        gulpSSH.close()
         done()
       })
     })
 
     it('should fail to connect if credentials are bad', (done) => {
-      gulpSSH.options.sshConfig = Object.assign({}, gulpSSH.options.sshConfig, { username: 'nobody' })
+      gulpSSH.options.sshConfig = Object.assign({}, sshConfig, { username: 'nobody' })
       gulpSSH.on('error', () => done())
       gulpSSH.getClient().gulpReady(() => {
         expect.fail()
+        gulpSSH.close()
+        done()
+      })
+    })
+
+    it('should load contents of private key on connect if privateKeyFile option is specified', (done) => {
+      const localSshConfig = Object.assign({}, sshConfig, { privateKeyFile })
+      delete localSshConfig.privateKey
+      gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
+      gulpSSH.on('error', done)
+      gulpSSH.getClient().gulpReady(function () {
+        expect(gulpSSH.options.sshConfig.privateKey).to.eql(sshConfig.privateKey)
+        expect(gulpSSH.options.sshConfig).to.not.have.property('privateKeyFile')
+        expect(localSshConfig.privateKeyFile).to.equal(privateKeyFile)
+        expect(localSshConfig).to.not.have.property('privateKey')
+        gulpSSH.close()
+        done()
+      })
+    })
+
+    it('should expand leading tilde in privateKeyFile option', (done) => {
+      const tildePrivateKeyFile = path.join('~', path.relative(os.homedir(), privateKeyFile))
+      const localSshConfig = Object.assign({}, sshConfig, { privateKeyFile: tildePrivateKeyFile })
+      delete localSshConfig.privateKey
+      gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
+      gulpSSH.on('error', done)
+      gulpSSH.getClient().gulpReady(function () {
+        expect(gulpSSH.options.sshConfig.privateKey).to.eql(sshConfig.privateKey)
+        expect(gulpSSH.options.sshConfig).to.not.have.property('privateKeyFile')
+        expect(localSshConfig.privateKeyFile).to.equal(tildePrivateKeyFile)
+        expect(localSshConfig).to.not.have.property('privateKey')
+        gulpSSH.close()
+        done()
+      })
+    })
+
+    it('should use private key from privateKeyFile option instead of privateKey option', (done) => {
+      const localSshConfig = Object.assign({}, sshConfig, { privateKeyFile, privateKey: 'bogus' })
+      gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
+      gulpSSH.on('error', done)
+      gulpSSH.getClient().gulpReady(function () {
+        expect(gulpSSH.options.sshConfig.privateKey).to.eql(sshConfig.privateKey)
+        expect(gulpSSH.options.sshConfig).to.not.have.property('privateKeyFile')
+        expect(localSshConfig.privateKeyFile).to.equal(privateKeyFile)
+        expect(localSshConfig.privateKey).to.equal('bogus')
+        gulpSSH.close()
         done()
       })
     })
