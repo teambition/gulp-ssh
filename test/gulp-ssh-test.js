@@ -3,6 +3,7 @@
 
 const chai = require('chai')
 chai.use(require('chai-fs'))
+chai.use(require('dirty-chai'))
 const { expect } = chai
 const fs = require('fs-extra')
 const gulp = require('gulp')
@@ -239,6 +240,20 @@ describe('GulpSSH', () => {
           expect(output.pwd).to.eql(['/tmp'])
           done()
         }))
+    })
+
+    it('should receive ssh data via ssh2Data event', (done) => {
+      const ssh2Data = []
+      gulpSSH
+        .shell(['pushd /tmp', 'popd'])
+        .on('ssh2Data', (chunk) => ssh2Data.push(chunk))
+        .on('finish', () => {
+          expect(ssh2Data).to.not.be.empty()
+          expect(ssh2Data[0]).to.be.instanceOf(Buffer)
+          const output = parseLog(ssh2Data.map((data) => data.toString()).join(''))
+          expect(Object.keys(output)).to.include.members(['pushd /tmp', 'popd', 'exit'])
+          done()
+        })
     })
   })
 })
