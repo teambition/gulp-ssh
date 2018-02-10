@@ -43,7 +43,7 @@ describe('GulpSSH', () => {
 
   describe('instantiate', () => {
     it('should fail if options are not provided', () => {
-      expect(GulpSSH).to.throw('sshConfig required')
+      expect(() => new GulpSSH()).to.throw('sshConfig required')
     })
 
     it('should defer loading of private key specified in privateKeyFile option', () => {
