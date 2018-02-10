@@ -16,23 +16,24 @@ const File = require('vinyl')
 const PluginError = require('plugin-error')
 
 const through = require('through2')
-const Client = require('ssh2').Client
+const SSH2Client = require('ssh2').Client
 const packageName = require('./package.json').name
 
+class Client extends SSH2Client {
+  gulpFlushReady () {
+    this.gulpConnected = true
+    while (this.gulpQueue.length) this.gulpQueue.shift().call(this)
+  }
+  gulpReady (cb) {
+    if (this.gulpConnected) cb.call(this)
+    else this.gulpQueue.push(cb)
+  }
+}
 Client.prototype.gulpId = null
 Client.prototype.gulpQueue = null
 Client.prototype.gulpConnected = false
-Client.prototype.gulpFlushReady = function () {
-  this.gulpConnected = true
-  while (this.gulpQueue.length) this.gulpQueue.shift().call(this)
-}
-Client.prototype.gulpReady = function (cb) {
-  if (this.gulpConnected) cb.call(this)
-  else this.gulpQueue.push(cb)
-}
 
 var gulpId = 0
-
 class GulpSSH extends EventEmitter {
   constructor (options) {
     if (!options || !options.sshConfig) throw new Error('options.sshConfig required!')
