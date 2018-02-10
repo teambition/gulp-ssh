@@ -8,6 +8,8 @@
 
 const colors = require('ansicolors')
 const log = require('fancy-log')
+const fs = require('fs')
+const os = require('os')
 const path = require('path')
 const util = require('util')
 const EventEmitter = require('events').EventEmitter
@@ -50,6 +52,8 @@ GulpSSH.prototype.getClient = function () {
   ssh.gulpQueue = []
   ssh.gulpConnected = false
   this.connections[ssh.gulpId] = ssh
+  var options = this.options
+  var privateKeyFile
 
   ssh
     .on('error', function (err) {
@@ -62,7 +66,24 @@ GulpSSH.prototype.getClient = function () {
       delete ctx.connections[this.gulpId]
     })
     .on('ready', ssh.gulpFlushReady)
-    .connect(this.options.sshConfig)
+
+  if ((privateKeyFile = options.sshConfig.privateKeyFile)) {
+    if (privateKeyFile.charAt() === '~' && (path.sep === '\\'
+        ? /\/|\\/.test(privateKeyFile.charAt(1)) : privateKeyFile.charAt(1) === '/')) {
+      privateKeyFile = os.homedir() + privateKeyFile.substr(1)
+    }
+    var gulpSSH = this
+    fs.readFile(privateKeyFile, function (err, privateKey) {
+      if (err) throw err
+      var sshConfig = Object.assign({}, options.sshConfig, { privateKey })
+      delete sshConfig.privateKeyFile
+      gulpSSH.options = Object.assign({}, options, { sshConfig })
+      ssh.connect(sshConfig)
+    })
+  } else {
+    ssh.connect(options.sshConfig)
+  }
+
   return ssh
 }
 
