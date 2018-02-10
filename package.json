@@ -29,9 +29,12 @@
     "upload"
   ],
   "dependencies": {
-    "gulp-util": "^3.0.8",
+    "ansicolors": "^0.3.2",
+    "fancy-log": "^1.3.2",
+    "plugin-error": "^1.0.1",
+    "ssh2": "~0.5.5",
     "through2": "^2.0.3",
-    "ssh2": "~0.5.5"
+    "vinyl": "^2.1.0"
   },
   "devDependencies": {
     "chai": "^4.1.2",

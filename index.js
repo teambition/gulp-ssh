@@ -6,11 +6,14 @@
  * Licensed under the MIT license.
  */
 
+const colors = require('ansicolors')
+const log = require('fancy-log')
 const path = require('path')
 const util = require('util')
 const EventEmitter = require('events').EventEmitter
+const File = require('vinyl')
+const PluginError = require('plugin-error')
 
-const gutil = require('gulp-util')
 const through = require('through2')
 const Client = require('ssh2').Client
 const packageName = require('./package.json').name
@@ -50,7 +53,7 @@ GulpSSH.prototype.getClient = function () {
 
   ssh
     .on('error', function (err) {
-      ctx.emit('error', new gutil.PluginError(packageName, err))
+      ctx.emit('error', new PluginError(packageName, err))
     })
     .on('end', function () {
       delete ctx.connections[this.gulpId]
@@ -78,7 +81,7 @@ GulpSSH.prototype.exec = function (commands, options) {
   var chunks = []
   var outStream = through.obj()
 
-  if (!commands) throw new gutil.PluginError(packageName, '`commands` required.')
+  if (!commands) throw new PluginError(packageName, '`commands` required.')
 
   options = options || {}
   commands = Array.isArray(commands) ? commands.slice() : [commands]
@@ -86,7 +89,7 @@ GulpSSH.prototype.exec = function (commands, options) {
   ssh.gulpReady(execCommand)
 
   function endStream () {
-    outStream.push(new gutil.File({
+    outStream.push(new File({
       cwd: __dirname,
       base: __dirname,
       path: path.join(__dirname, options.filePath || 'gulp-ssh.exec.log'),
@@ -102,9 +105,9 @@ GulpSSH.prototype.exec = function (commands, options) {
     var command = commands.shift()
     if (typeof command !== 'string') return execCommand()
 
-    gutil.log(packageName + ' :: Executing :: ' + command)
+    log(packageName + ' :: Executing :: ' + command)
     ssh.exec(command, options, function (err, stream) {
-      if (err) return outStream.emit('error', new gutil.PluginError(packageName, err))
+      if (err) return outStream.emit('error', new PluginError(packageName, err))
       stream
         .on('data', function (chunk) {
           chunkSize += chunk.length
@@ -114,12 +117,12 @@ GulpSSH.prototype.exec = function (commands, options) {
         .on('exit', function (code, signalName, didCoreDump, description) {
           if (ctx.ignoreErrors === false && code == null) {
             var message = signalName + ', ' + didCoreDump + ', ' + description
-            outStream.emit('error', new gutil.PluginError(packageName, message))
+            outStream.emit('error', new PluginError(packageName, message))
           }
         })
         .on('close', execCommand)
         .stderr.on('data', function (data) {
-          outStream.emit('error', new gutil.PluginError(packageName, data + ''))
+          outStream.emit('error', new PluginError(packageName, data + ''))
         })
     })
   }
@@ -131,14 +134,14 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
   var outStream
   var ssh = this.getClient()
   options = options || {}
-  if (!command) throw new gutil.PluginError(packageName, '`command` required.')
-  if (!filePath) throw new gutil.PluginError(packageName, '`filePath` required.')
+  if (!command) throw new PluginError(packageName, '`command` required.')
+  if (!filePath) throw new PluginError(packageName, '`filePath` required.')
 
   if (command === 'write') {
     outStream = through.obj(function (file, encoding, callback) {
       ssh.gulpReady(function () {
         ssh.sftp(function (err, sftp) {
-          if (err) return callback(new gutil.PluginError(packageName, err))
+          if (err) return callback(new PluginError(packageName, err))
           options.autoClose = true
           var write = sftp.createWriteStream(filePath, options)
 
@@ -155,7 +158,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
           if (file.isStream()) file.contents.pipe(write)
           else if (file.isBuffer()) write.end(file.contents)
           else {
-            err = new gutil.PluginError(packageName, 'file error!')
+            err = new PluginError(packageName, 'file error!')
             write.end()
           }
         })
@@ -171,7 +174,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
     outStream = through.obj()
     ssh.gulpReady(function () {
       ssh.sftp(function (err, sftp) {
-        if (err) return outStream.emit('error', new gutil.PluginError(packageName, err))
+        if (err) return outStream.emit('error', new PluginError(packageName, err))
         var read = sftp.createReadStream(filePath, options)
         options.base = options.base || ''
 
@@ -184,7 +187,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
             outStream.emit('error', err)
           })
           .on('end', function () {
-            outStream.push(new gutil.File({
+            outStream.push(new File({
               cwd: __dirname,
               base: __dirname,
               path: path.join(__dirname, options.filePath || filePath),
@@ -199,7 +202,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
           })
       })
     })
-  } else throw new gutil.PluginError(packageName, 'Command "' + command + '" not supported.')
+  } else throw new PluginError(packageName, 'Command "' + command + '" not supported.')
 
   return outStream
 }
@@ -207,7 +210,7 @@ GulpSSH.prototype.sftp = function (command, filePath, options) {
 // Acts similarly to Gulp dest, will make dirs if not exist and copy the files
 // to the glob path
 GulpSSH.prototype.dest = function (destDir, options) {
-  if (!destDir) throw new gutil.PluginError(packageName, '`destDir` required.')
+  if (!destDir) throw new PluginError(packageName, '`destDir` required.')
 
   var sftpClient = null
   var ssh = this.getClient()
@@ -231,24 +234,24 @@ GulpSSH.prototype.dest = function (destDir, options) {
       sftpClient = null
     }
     ssh.end()
-    if (err) err = new gutil.PluginError(packageName, err)
+    if (err) err = new PluginError(packageName, err)
     callback(err)
   }
 
   return through.obj(function (file, encoding, callback) {
     if (file.isNull()) {
-      gutil.log('"' + gutil.colors.cyan(file.path) + '" has no content. Skipping.')
+      log('"' + colors.cyan(file.path) + '" has no content. Skipping.')
       return callback()
     }
     getSftp(function (err, sftp) {
       if (err) return end(err, callback)
       var outPath = path.join(destDir, file.relative)
       if (path.sep === '\\') outPath = outPath.replace(/\\/g, '/')
-      gutil.log('Preparing to write "' + gutil.colors.cyan(outPath) + '"')
+      log('Preparing to write "' + colors.cyan(outPath) + '"')
 
       internalMkDirs(sftp, outPath, function (err) {
         if (err) return end(err, callback)
-        gutil.log('Writing \'' + gutil.colors.cyan(outPath) + '\'')
+        log('Writing \'' + colors.cyan(outPath) + '\'')
 
         var write = sftp.createWriteStream(outPath, options)
 
@@ -264,7 +267,7 @@ GulpSSH.prototype.dest = function (destDir, options) {
 
         function done (err) {
           if (err) return end(err, callback)
-          gutil.log('Finished writing \'' + gutil.colors.cyan(outPath) + '\'')
+          log('Finished writing \'' + colors.cyan(outPath) + '\'')
           callback()
         }
       })
@@ -280,13 +283,13 @@ GulpSSH.prototype.shell = function (commands, options) {
   var ssh = this.getClient()
   var outStream = through.obj()
 
-  if (!commands) throw new gutil.PluginError(packageName, '`commands` required.')
+  if (!commands) throw new PluginError(packageName, '`commands` required.')
 
   options = options || {}
   commands = Array.isArray(commands) ? commands.slice() : [commands]
 
   function endStream () {
-    outStream.push(new gutil.File({
+    outStream.push(new File({
       cwd: __dirname,
       base: __dirname,
       path: path.join(__dirname, options.filePath || 'gulp-ssh.exec.log'),
@@ -300,7 +303,7 @@ GulpSSH.prototype.shell = function (commands, options) {
   ssh.gulpReady(function () {
     if (commands.length === 0) return endStream()
     ssh.shell(function (err, stream) {
-      if (err) return outStream.emit('error', new gutil.PluginError(packageName, err))
+      if (err) return outStream.emit('error', new PluginError(packageName, err))
 
       stream
         .on('data', function (chunk) {
@@ -310,13 +313,13 @@ GulpSSH.prototype.shell = function (commands, options) {
         })
         .on('close', endStream)
         .stderr.on('data', function (data) {
-          outStream.emit('error', new gutil.PluginError(packageName, data + ''))
+          outStream.emit('error', new PluginError(packageName, data + ''))
         })
 
       var lastCommand
       commands.forEach(function (command) {
         if (command[command.length - 1] !== '\n') command += '\n'
-        gutil.log(packageName + ' :: shell :: ' + command)
+        log(packageName + ' :: shell :: ' + command)
         stream.write(command)
         lastCommand = command
       })
@@ -335,7 +338,7 @@ function internalMkDirs (sftp, filePath, callback) {
     // recursively make parent directories as required
     internalMkDirs(sftp, outPathDir, function (err) {
       if (err) return callback(err)
-      gutil.log('Creating directory \'' + gutil.colors.cyan(outPathDir) + '\'')
+      log('Creating directory \'' + colors.cyan(outPathDir) + '\'')
       sftp.mkdir(outPathDir, callback)
     })
   })
