@@ -28,8 +28,5 @@ mkdir -p ~/.ssh
 chmod 700 ~/.ssh
 cat $SSH_CLIENT_HOME/id_rsa.pub > ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
-#cat << EOF > ~/.ssh/config
-#Host localhost
-#  StrictHostKeyChecking no
-#EOF
-#chmod 600 ~/.ssh/config
+eval $(ssh-agent -s) >/dev/null
+ssh-add $SSH_CLIENT_HOME/id_rsa
