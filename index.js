@@ -64,7 +64,8 @@ class GulpSSH extends EventEmitter {
       })
       .on('ready', ssh.gulpFlushReady)
 
-    let privateKeyFile = options.sshConfig.privateKeyFile
+    let sshConfig = options.sshConfig
+    let privateKeyFile = sshConfig.privateKeyFile
     if (privateKeyFile) {
       if (privateKeyFile.charAt() === '~' && (path.sep === '\\'
           ? /\/|\\/.test(privateKeyFile.charAt(1)) : privateKeyFile.charAt(1) === '/')) {
@@ -74,14 +75,18 @@ class GulpSSH extends EventEmitter {
       const gulpSSH = this
       fs.readFile(privateKeyFile, function (err, privateKey) {
         if (err) throw err
-
-        const sshConfig = Object.assign({}, options.sshConfig, { privateKey })
+        sshConfig = Object.assign({}, sshConfig, { privateKey })
         delete sshConfig.privateKeyFile
         gulpSSH.options = Object.assign({}, options, { sshConfig })
         ssh.connect(sshConfig)
       })
     } else {
-      ssh.connect(options.sshConfig)
+      if (sshConfig.useAgent) {
+        sshConfig = Object.assign({}, sshConfig, { agent: process.env.SSH_AUTH_SOCK })
+        delete sshConfig.useAgent
+        this.options = Object.assign({}, options, { sshConfig })
+      }
+      ssh.connect(sshConfig)
     }
 
     return ssh

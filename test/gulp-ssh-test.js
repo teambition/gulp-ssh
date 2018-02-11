@@ -56,13 +56,46 @@ describe('GulpSSH', () => {
   })
 
   describe('connect', () => {
-    it('should connect if credentials are good', (done) => {
+    it('should connect if credentials provided by private key are good', (done) => {
       gulpSSH.on('error', done)
       gulpSSH.getClient().gulpReady(function () {
         expect(this.gulpConnected).to.equal(true)
-        gulpSSH.close()
         done()
       })
+    })
+
+    it('should connect if credentials provided by agent are good', function (done) {
+      if (process.env.SSH_AUTH_SOCK) {
+        const localSshConfig = Object.assign({}, sshConfig, { agent: process.env.SSH_AUTH_SOCK })
+        delete localSshConfig.privateKey
+        gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
+        gulpSSH.on('error', done)
+        gulpSSH.getClient().gulpReady(function () {
+          expect(this.gulpConnected).to.equal(true)
+          done()
+        })
+      } else {
+        console.log('SSH agent not detected. Skipping SSH agent test.')
+        this.skip()
+        done()
+      }
+    })
+
+    it('should connect if credentials provided by auto-detected agent are good', function (done) {
+      if (process.env.SSH_AUTH_SOCK) {
+        const localSshConfig = Object.assign({}, sshConfig, { useAgent: true })
+        delete localSshConfig.privateKey
+        gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
+        gulpSSH.on('error', done)
+        gulpSSH.getClient().gulpReady(function () {
+          expect(this.gulpConnected).to.equal(true)
+          done()
+        })
+      } else {
+        console.log('SSH agent not detected. Skipping SSH agent test.')
+        this.skip()
+        done()
+      }
     })
 
     it('should fail to connect if credentials are bad', (done) => {
@@ -70,7 +103,6 @@ describe('GulpSSH', () => {
       gulpSSH.on('error', () => done())
       gulpSSH.getClient().gulpReady(() => {
         expect.fail()
-        gulpSSH.close()
         done()
       })
     })
@@ -81,11 +113,11 @@ describe('GulpSSH', () => {
       gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
       gulpSSH.on('error', done)
       gulpSSH.getClient().gulpReady(function () {
+        expect(this.gulpConnected).to.equal(true)
         expect(gulpSSH.options.sshConfig.privateKey).to.eql(sshConfig.privateKey)
         expect(gulpSSH.options.sshConfig).to.not.have.property('privateKeyFile')
         expect(localSshConfig.privateKeyFile).to.equal(privateKeyFile)
         expect(localSshConfig).to.not.have.property('privateKey')
-        gulpSSH.close()
         done()
       })
     })
@@ -97,11 +129,11 @@ describe('GulpSSH', () => {
       gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
       gulpSSH.on('error', done)
       gulpSSH.getClient().gulpReady(function () {
+        expect(this.gulpConnected).to.equal(true)
         expect(gulpSSH.options.sshConfig.privateKey).to.eql(sshConfig.privateKey)
         expect(gulpSSH.options.sshConfig).to.not.have.property('privateKeyFile')
         expect(localSshConfig.privateKeyFile).to.equal(tildePrivateKeyFile)
         expect(localSshConfig).to.not.have.property('privateKey')
-        gulpSSH.close()
         done()
       })
     })
@@ -111,11 +143,11 @@ describe('GulpSSH', () => {
       gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
       gulpSSH.on('error', done)
       gulpSSH.getClient().gulpReady(function () {
+        expect(this.gulpConnected).to.equal(true)
         expect(gulpSSH.options.sshConfig.privateKey).to.eql(sshConfig.privateKey)
         expect(gulpSSH.options.sshConfig).to.not.have.property('privateKeyFile')
         expect(localSshConfig.privateKeyFile).to.equal(privateKeyFile)
         expect(localSshConfig.privateKey).to.equal('bogus')
-        gulpSSH.close()
         done()
       })
     })

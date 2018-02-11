@@ -91,6 +91,10 @@ Type: `Object`
 
 * **privateKey** - `String` or `Buffer` - Buffer or string that contains a private key for key-based user authentication (OpenSSH format). **Default:** (none)
 
+* **privateKeyFile** - `String` - A path to a file that contains a private key for key-based user authentication (OpenSSH format). Special for gulp-ssh. **Default:** (none)
+
+* **useAgent** - `Boolean` - Auto-detect the running SSH agent and use it to perform authentication. Special for gulp-ssh. **Default:** (false)
+
 * ...and so forth.
 
 For a full list of connection options, see the reference for the [connect()](https://github.com/mscdex/ssh2#client-methods) method from the SSH2 module.
