@@ -65,7 +65,7 @@ describe('GulpSSH', () => {
     })
 
     it('should connect if credentials provided by agent are good', function (done) {
-      if (process.env.SSH_AUTH_SOCK) {
+      if (process.env.CI || process.env.SSH_AUTH_SOCK) {
         const localSshConfig = Object.assign({}, sshConfig, { agent: process.env.SSH_AUTH_SOCK })
         delete localSshConfig.privateKey
         gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })
@@ -82,7 +82,7 @@ describe('GulpSSH', () => {
     })
 
     it('should connect if credentials provided by auto-detected agent are good', function (done) {
-      if (process.env.SSH_AUTH_SOCK) {
+      if (process.env.CI || process.env.SSH_AUTH_SOCK) {
         const localSshConfig = Object.assign({}, sshConfig, { useAgent: true })
         delete localSshConfig.privateKey
         gulpSSH = new GulpSSH({ ignoreErrors: false, sshConfig: localSshConfig })

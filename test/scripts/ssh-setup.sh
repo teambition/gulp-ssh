@@ -28,5 +28,6 @@ mkdir -p ~/.ssh
 chmod 700 ~/.ssh
 cat $SSH_CLIENT_HOME/id_rsa.pub > ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
-eval $(ssh-agent -s) >/dev/null
+ssh-agent -s > ~/.ssh/agentrc
+eval $(cat ~/.ssh/agentrc) >/dev/null
 ssh-add $SSH_CLIENT_HOME/id_rsa
