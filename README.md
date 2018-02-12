@@ -91,9 +91,9 @@ Type: `Object`
 
 * **privateKey** - `String` or `Buffer` - Buffer or string that contains a private key for key-based user authentication (OpenSSH format). **Default:** (none)
 
-* **privateKeyFile** - `String` - A path to a file that contains a private key for key-based user authentication (OpenSSH format). Special for gulp-ssh. **Default:** (none)
+* **privateKeyFile** - `String` - A path to a file that contains a private key for key-based user authentication (OpenSSH format). gulp-ssh extension. **Default:** (none)
 
-* **useAgent** - `Boolean` - Auto-detect the running SSH agent and use it to perform authentication. Special for gulp-ssh. **Default:** (false)
+* **useAgent** - `Boolean` - Auto-detect the running SSH agent (via SSH_AUTH_SOCK environment variable) and use it to perform authentication. gulp-ssh extension. **Default:** (false)
 
 * ...and so forth.
 
