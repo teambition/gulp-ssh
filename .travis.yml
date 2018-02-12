@@ -10,6 +10,7 @@ node_js:
 before_script:
 - test/scripts/ssh-setup.sh
 script:
+- eval $(cat ~/.ssh/agentrc) > /dev/null
 - yarn test
 after_script:
 - test/scripts/ssh-teardown.sh
