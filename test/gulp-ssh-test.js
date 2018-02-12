@@ -6,11 +6,11 @@ chai.use(require('chai-fs'))
 chai.use(require('dirty-chai'))
 const { expect } = chai
 const fs = require('fs-extra')
-const gulp = require('gulp')
 const GulpSSH = require('..')
 const os = require('os')
 const path = require('path')
 const { obj: map } = require('through2')
+const vfs = require('vinyl-fs')
 
 const DEST_DIR = path.join(__dirname, 'dest')
 const FIXTURES_DIR = path.join(__dirname, 'fixtures')
@@ -192,7 +192,7 @@ describe('GulpSSH', () => {
 
     it('should copy files to server', (done) => {
       const files = []
-      gulp
+      vfs
         .src('**/*', { cwd: srcDir, cwdbase: true })
         .pipe(collectFiles(files))
         .pipe(gulpSSH.dest(DEST_DIR))
@@ -212,7 +212,7 @@ describe('GulpSSH', () => {
     it('should create interim directories on server', (done) => {
       const nestedDestDir = path.join(DEST_DIR, 'a/b/c')
       const files = []
-      gulp
+      vfs
         .src('**/*', { cwd: srcDir, cwdbase: true })
         .pipe(collectFiles(files))
         .pipe(gulpSSH.dest(nestedDestDir))
@@ -269,7 +269,7 @@ describe('GulpSSH', () => {
       const remoteDestFile = path.relative(process.env.HOME, localDestFile)
       // NOTE sftp write requires dest directory to exist
       fs.ensureDirSync(DEST_DIR)
-      gulp
+      vfs
         .src(srcRelFile, { cwd: FIXTURES_DIR, cwdbase: true })
         .pipe(gulpSSH.sftp('write', remoteDestFile))
         .on('finish', () => {
