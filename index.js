@@ -175,6 +175,7 @@ class GulpSSH extends EventEmitter {
             write
               .on('error', function (error) {
                 err = error
+                return callback(new PluginError(packageName, error))
               })
               .on('finish', function () {
                 sftp.end()
