@@ -1,6 +1,6 @@
 {
   "name": "gulp-ssh",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "SSH and SFTP tasks for gulp",
   "license": "MIT",
   "author": {
@@ -14,9 +14,9 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/teambition/gulp-ssh"
+    "url": "git://github.com/kevinthant/gulp-ssh"
   },
-  "homepage": "https://github.com/teambition/gulp-ssh",
+  "homepage": "https://github.com/kevinthant/gulp-ssh",
   "keywords": [
     "gulpplugin",
     "ssh",
