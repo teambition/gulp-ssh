@@ -173,6 +173,14 @@ class GulpSSH extends EventEmitter {
             const write = sftp.createWriteStream(filePath, options)
 
             write
+              .on('open', function() {
+                if (file.isStream()) file.contents.pipe(write)
+                else if (file.isBuffer()) write.end(file.contents)
+                else {
+                  err = new PluginError(packageName, 'file error!')
+                  write.end()
+                }
+              })
               .on('error', function (error) {
                 err = error
               })
@@ -181,13 +189,6 @@ class GulpSSH extends EventEmitter {
                 if (err) callback(err)
                 else callback(null, file)
               })
-
-            if (file.isStream()) file.contents.pipe(write)
-            else if (file.isBuffer()) write.end(file.contents)
-            else {
-              err = new PluginError(packageName, 'file error!')
-              write.end()
-            }
           })
         })
       }, function (callback) {
@@ -346,8 +347,8 @@ class GulpSSH extends EventEmitter {
 
         let lastCommand
         commands.forEach(function (command) {
-          if (command[command.length - 1] !== '\n') command += '\n'
           log(packageName + ' :: shell :: ' + command)
+          if (command[command.length - 1] !== '\n') command += '\n'
           stream.write(command)
           lastCommand = command
         })
