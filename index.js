@@ -184,7 +184,7 @@ class GulpSSH extends EventEmitter {
               .on('error', function (error) {
                 err = error
               })
-              .on('finish', function () {
+              .on('close', function () {
                 sftp.end()
                 if (err) callback(err)
                 else callback(null, file)
